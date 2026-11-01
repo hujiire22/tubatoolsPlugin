@@ -876,16 +876,14 @@ function showWord(){
   $('wordRes').innerText = "";
 }
 function speakWord(){
-  if(wordIdx >= words.length) return;
+  if(!words.length){ alert("请先在下面导入或加载单词！"); return; }
+  if(wordIdx >= words.length){ alert("单词已学完！"); return; }
   const w = encodeURIComponent(words[wordIdx]);
-  // 百度翻译 TTS（国内稳定，不需要梯子）
-  const audio = new Audio();
-  audio.src = "https://fanyi.baidu.com/gettts?lan=en&text=" + w + "&spd=3&source=web";
-  audio.play().catch(()=>{
-    // 失败再试有道
-    audio.src = "https://dict.youdao.com/dictvoice?audio=" + w + "&type=2";
-    audio.play();
-  });
+  // 有道词典 TTS
+  const audio = new Audio("https://dict.youdao.com/dictvoice?audio=" + w + "&type=2");
+  audio.play().catch(e => alert("播放失败: " + e.message));
+  // 调试：确认点到了
+  console.log("播放:", words[wordIdx]);
 }
 function checkWord(){
   if(wordIdx >= words.length) return;
