@@ -870,15 +870,22 @@ function showWord(){
 function speakWord(){
   if(wordIdx >= words.length) return;
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(words[wordIdx]);
-  u.lang = 'en-US';
-  u.rate = 0.85;
-  u.pitch = 1;
-  // 等待 voices 加载后再读，修复安卓第一次没声音
-  const voices = speechSynthesis.getVoices();
-  const enVoice = voices.find(v => v.lang.startsWith('en'));
-  if(enVoice) u.voice = enVoice;
-  setTimeout(()=>speechSynthesis.speak(u), 100);
+  // 安卓语音引擎异步加载，先等 voices 就绪
+  const loadVoices = new Promise(resolve => {
+    let v = speechSynthesis.getVoices();
+    if(v.length) return resolve(v);
+    speechSynthesis.onvoiceschanged = () => resolve(speechSynthesis.getVoices());
+    setTimeout(()=>resolve(speechSynthesis.getVoices()), 500);
+  });
+  loadVoices.then(voices=>{
+    const u = new SpeechSynthesisUtterance(words[wordIdx]);
+    u.lang = 'en-US';
+    u.rate = 0.85;
+    u.pitch = 1;
+    const enVoice = voices.find(v => v.lang.startsWith('en'));
+    if(enVoice) u.voice = enVoice;
+    speechSynthesis.speak(u);
+  });
 }
 function checkWord(){
   if(wordIdx >= words.length) return;
