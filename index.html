@@ -876,14 +876,36 @@ function showWord(){
   $('wordRes').innerText = "";
 }
 function speakWord(){
-  if(!words.length){ alert("请先在下面导入或加载单词！"); return; }
+  if(!words.length){ alert("请先点下面「一键四级高频词」加载单词！"); return; }
   if(wordIdx >= words.length){ alert("单词已学完！"); return; }
-  const w = encodeURIComponent(words[wordIdx]);
-  // 有道词典 TTS
-  const audio = new Audio("https://dict.youdao.com/dictvoice?audio=" + w + "&type=2");
-  audio.play().catch(e => alert("播放失败: " + e.message));
-  // 调试：确认点到了
-  console.log("播放:", words[wordIdx]);
+  const word = words[wordIdx];
+  const w = encodeURIComponent(word);
+  let tried = 0;
+  const total = 4;
+  function tryNext(i){
+    if(i >= total){
+      // 全部在线方案失败，试本地语音
+      try{
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(word);
+        u.lang = 'en-US'; u.rate = 0.8;
+        speechSynthesis.speak(u);
+      }catch(e){ alert("所有发音方式都失败了"); }
+      return;
+    }
+    const urls = [
+      "https://dict.youdao.com/dictvoice?audio=" + w + "&type=2",
+      "https://dict.youdao.com/dictvoice?audio=" + w + "&type=1",
+      "https://fanyi.baidu.com/gettts?lan=en&text=" + w + "&spd=3&source=web",
+      "https://translate.google.com/translate_tts?ie=UTF-8&q=" + w + "&tl=en&client=tw-ob"
+    ];
+    const audio = new Audio();
+    audio.src = urls[i];
+    audio.oncanplay = function(){ audio.play().catch(()=>tryNext(i+1)); };
+    audio.onerror = function(){ tried++; tryNext(i+1); };
+    audio.load();
+  }
+  tryNext(0);
 }
 function checkWord(){
   if(wordIdx >= words.length) return;
