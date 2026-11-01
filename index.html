@@ -878,11 +878,12 @@ function showWord(){
 function speakWord(){
   if(wordIdx >= words.length) return;
   const w = encodeURIComponent(words[wordIdx]);
-  // 双保险：先试 Google 翻译 TTS，失败再试有道
+  // 百度翻译 TTS（国内稳定，不需要梯子）
   const audio = new Audio();
-  audio.src = "https://translate.google.com/translate_tts?ie=UTF-8&q=" + w + "&tl=en&client=tw-ob";
+  audio.src = "https://fanyi.baidu.com/gettts?lan=en&text=" + w + "&spd=3&source=web";
   audio.play().catch(()=>{
-    audio.src = "https://dict.youdao.com/dictvoice?audio=" + w + "&type=1";
+    // 失败再试有道
+    audio.src = "https://dict.youdao.com/dictvoice?audio=" + w + "&type=2";
     audio.play();
   });
 }
