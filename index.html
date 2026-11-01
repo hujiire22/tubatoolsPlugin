@@ -200,6 +200,7 @@ button.bad{background:var(--danger)}
     <div class="seg">
       <button class="active" id="segCard" onclick="setWordMode('card')">📖 词卡自评</button>
       <button id="segSpell" onclick="setWordMode('spell')">✍️ 听音拼写</button>
+      <button id="segDict" onclick="setWordMode('dict')">✏️ 默写自测</button>
     </div>
 
     <div class="group-chips" id="groupChips" style="display:none"></div>
@@ -257,6 +258,25 @@ button.bad{background:var(--danger)}
       </div>
     </div>
 
+    <!-- 默写自测模式 -->
+    <div id="dictMode" style="display:none">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>默写自测（看中文写英文）</div>
+        <div class="word-card" style="padding:24px 16px">
+          <div class="w-index">第 <b id="dictIdx">0</b> / <b id="dictTotal">0</b> 词</div>
+          <div class="w-mean" style="margin:12px 0;font-size:18px;font-weight:600" id="dictMean">----</div>
+          <button class="w-speak" onclick="speakWord()">🔊 听发音</button>
+        </div>
+        <input id="dictInput" placeholder="凭记忆写出英文单词" style="margin-top:12px">
+        <div class="row" style="margin-top:10px">
+          <button class="ok" onclick="checkDict()">核对</button>
+          <button class="sec" onclick="nextDict()">下一个</button>
+          <button class="sec" onclick="showDictAns()">💡 看答案</button>
+        </div>
+        <div class="out-box" id="dictRes" style="margin-top:10px;min-height:44px"></div>
+      </div>
+    </div>
+
     <!-- 导入单词 -->
     <div class="card">
       <div class="card-title"><span class="dot"></span>📥 导入单词</div>
@@ -308,6 +328,14 @@ button.bad{background:var(--danger)}
     </div>
   </div>
 
+  <!-- ========== 语法学习 ========== -->
+  <div id="panel-grammar" style="display:none">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>四六级核心语法点</div>
+      <div id="grammarList"></div>
+    </div>
+  </div>
+
   <!-- ========== 设置 ========== -->
   <div id="panel-setting" style="display:none">
     <div class="card">
@@ -331,7 +359,8 @@ button.bad{background:var(--danger)}
     <button class="active" data-tab="speech" onclick="switchTab('speech')"><span class="ic">🎙️</span>口播</button>
     <button data-tab="word" onclick="switchTab('word')"><span class="ic">📖</span>单词</button>
     <button data-tab="cet4" onclick="switchTab('cet4')"><span class="ic">📚</span>题库</button>
-    <button data-tab="chat" onclick="switchTab('chat')"><span class="ic">💬</span>AI口语</button>
+    <button data-tab="grammar" onclick="switchTab('grammar')"><span class="ic">📝</span>语法</button>
+    <button data-tab="chat" onclick="switchTab('chat')"><span class="ic">💬</span>AI</button>
     <button data-tab="setting" onclick="switchTab('setting')"><span class="ic">⚙️</span>设置</button>
   </nav>
 </div>
@@ -417,12 +446,13 @@ rateRange.oninput = () => rateVal.innerText = rateRange.value;
 /* ================= 页面切换 ================= */
 function switchTab(tab){
   currentTab = tab;
-  ['speech','word','cet4','chat','setting'].forEach(t=>{
+  ['speech','word','cet4','grammar','chat','setting'].forEach(t=>{
     $('panel-'+t).style.display = t===tab ? 'block' : 'none';
   });
   document.querySelectorAll('.tabbar button').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab === tab);
   });
+  if(tab==='grammar') renderGrammar();
 }
 
 /* ================= 口播：录音与识别 ================= */
@@ -603,8 +633,11 @@ function setWordMode(mode){
   wordMode = mode;
   $('segCard').classList.toggle('active', mode==='card');
   $('segSpell').classList.toggle('active', mode==='spell');
+  $('segDict').classList.toggle('active', mode==='dict');
   $('cardMode').style.display = mode==='card' ? 'block' : 'none';
   $('spellMode').style.display = mode==='spell' ? 'block' : 'none';
+  $('dictMode').style.display = mode==='dict' ? 'block' : 'none';
+  if(mode==='dict') initDict();
 }
 
 function loadWords(){
@@ -836,10 +869,16 @@ function showWord(){
 }
 function speakWord(){
   if(wordIdx >= words.length) return;
+  speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(words[wordIdx]);
-  u.lang = /[a-zA-Z]/.test(words[wordIdx]) ? 'en-US' : 'zh-CN';
-  u.rate = 0.9;
-  speechSynthesis.speak(u);
+  u.lang = 'en-US';
+  u.rate = 0.85;
+  u.pitch = 1;
+  // 等待 voices 加载后再读，修复安卓第一次没声音
+  const voices = speechSynthesis.getVoices();
+  const enVoice = voices.find(v => v.lang.startsWith('en'));
+  if(enVoice) u.voice = enVoice;
+  setTimeout(()=>speechSynthesis.speak(u), 100);
 }
 function checkWord(){
   if(wordIdx >= words.length) return;
@@ -956,6 +995,63 @@ function clearResult(){
   $('cardResult').style.display = 'none';
   $('recDur').innerText = "0";
   $('speedInfo').innerText = "--";
+}
+
+/* ================= 默写自测 ================= */
+let dictIdx = 0;
+function initDict(){
+  if(!words.length){ alert("请先加载单词"); setWordMode('card'); return; }
+  dictIdx = 0;
+  showDictWord();
+}
+function showDictWord(){
+  if(dictIdx >= words.length){
+    $('dictMean').innerText = "✅ 默写完成！";
+    $('dictInput').value = "";
+    return;
+  }
+  $('dictIdx').innerText = dictIdx + 1;
+  $('dictTotal').innerText = words.length;
+  // 从单词释义里提取中文部分，如果没有就显示单词本身让用户背拼写
+  const w = words[dictIdx];
+  $('dictMean').innerText = w.mean ? w.mean : ("📝 默写拼写：" + w.en.split('').map(()=>'_').join(' '));
+  $('dictInput').value = "";
+  $('dictRes').innerText = "";
+}
+function nextDict(){ dictIdx++; showDictWord(); }
+function checkDict(){
+  if(dictIdx >= words.length) return;
+  const ans = $('dictInput').value.trim().toLowerCase();
+  const real = words[dictIdx].en.toLowerCase();
+  $('dictRes').innerText = ans === real ? "✅ 正确！" : "❌ 错误，正确：" + words[dictIdx].en;
+}
+function showDictAns(){
+  if(dictIdx >= words.length) return;
+  $('dictRes').innerText = "答案：" + words[dictIdx].en + (words[dictIdx].mean ? "（" + words[dictIdx].mean + "）" : "");
+}
+
+/* ================= 语法学习 ================= */
+const grammarData = [
+  {t:"时态：现在完成时",d:"have/has + 过去分词，表示过去发生但对现在有影响。例：I have studied English for 3 years."},
+  {t:"时态：过去进行时",d:"was/were + doing，表示过去某时刻正在做。例：I was reading at 8 last night."},
+  {t:"从句：宾语从句",d:"动词后接 that/if/whether 引导的从句。例：I think (that) you are right."},
+  {t:"从句：定语从句",d:"修饰名词，用 who/which/that。例：The girl who is standing there is my sister."},
+  {t:"非谓语：动词不定式",d:"to do 表目的/将来。例：I come here to learn English."},
+  {t:"非谓语：动名词",d:"doing 作主语/宾语。例：Swimming is good for health."},
+  {t:"虚拟语气",d:"与事实相反的假设。例：If I were you, I would study hard."},
+  {t:"被动语态",d:"be + 过去分词。例：The book was written by Lu Xun."},
+  {t:"情态动词",d:"must/might/can't 表推测。例：He must be at home."},
+  {t:"比较级最高级",d:"er/est 或 more/most。例：She is taller than me, the tallest in class."}
+];
+function renderGrammar(){
+  let html = "";
+  grammarData.forEach((g,i)=>{
+    html += `<div style="padding:12px;border-bottom:1px solid var(--gray)">
+      <b style="color:var(--primary)">${i+1}. ${g.t}</b>
+      <p style="margin-top:6px;font-size:14px;line-height:1.6">${g.d}</p>
+    </div>`;
+  });
+  $('grammarList').innerHTML = html;
 }
 
 /* ================= 初始化 ================= */
