@@ -1,0 +1,20 @@
+{
+  "display": "standalone",
+  "short_name": "四六级口语",
+  "theme_color": "#3671e9",
+  "icons": [
+    {
+      "sizes": "192x192",
+      "src": "/tubatoolsPlugin/icon-192.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "512x512",
+      "src": "/tubatoolsPlugin/icon-512.png",
+      "type": "image/png"
+    }
+  ],
+  "background_color": "#f4f6f8",
+  "name": "四六级口语单词助手",
+  "start_url": "/tubatoolsPlugin/"
+}
