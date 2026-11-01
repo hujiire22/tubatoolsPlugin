@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>四六级口语单词助手</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%233671e9'/%3E%3Cpath d='M30,25 L70,25 L70,75 L30,75 Z' fill='none' stroke='white' stroke-width='6'/%3E%3Cpath d='M40,40 L60,40 L60,60 L40,60 Z' fill='white'/%3E%3Cpath d='M75,35 Q85,45 75,55' stroke='white' stroke-width='5' fill='none'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#3671e9">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#eef1f7;--card:#fff;--text:#1c2135;--muted:#8a90a6;--primary:#3671e9;
+  --primary2:#7a5cff;--grad:linear-gradient(135deg,#3671e9,#7a5cff);
+  --danger:#ff4d6a;--ok:#22c55e;--warn:#f59e0b;--gray:#e5e8f0;--shadow:0 6px 24px rgba(30,40,90,.08);
+}
+.dark{
+  --bg:#14141c;--card:#20202c;--text:#eef0f8;--muted:#9aa0b5;
+  --gray:#31324a;--shadow:0 6px 24px rgba(0,0,0,.35);
+}
+body{background:var(--bg);color:var(--text);transition:.3s;min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:14px 14px 96px;position:relative}
+
+/* 顶部 */
+.app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.app-header .logo{display:flex;align-items:center;gap:8px}
+.app-header .logo-badge{width:34px;height:34px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:800;box-shadow:0 4px 12px rgba(54,113,233,.35)}
+.app-header h1{font-size:19px;font-weight:800}
+.app-header .icon-btn{width:36px;height:36px;border-radius:12px;background:var(--card);border:none;color:var(--text);font-size:17px;cursor:pointer;box-shadow:var(--shadow)}
+
+/* 卡片 */
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card-title{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.card-title .dot{width:6px;height:6px;border-radius:50%;background:var(--primary)}
+
+textarea,input,select{width:100%;padding:12px 14px;border:1px solid var(--gray);border-radius:14px;font-size:16px;background:var(--card);color:var(--text);outline:none;transition:.2s}
+textarea:focus,input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(54,113,233,.12)}
+textarea{min-height:110px;resize:none}
+
+button{border:none;border-radius:12px;background:var(--primary);color:#fff;font-size:15px;cursor:pointer;transition:.15s;font-weight:600}
+button:active{transform:scale(.96)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.sec{background:#6b7280}
+button.ok{background:var(--ok)}
+button.warn{background:var(--warn)}
+button.bad{background:var(--danger)}
+.btn{width:100%;padding:13px;border-radius:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.row button{flex:1;padding:12px 6px}
+
+/* 分段选择器 */
+.seg{display:flex;background:var(--gray);border-radius:12px;padding:4px;margin-bottom:14px;gap:4px}
+.seg button{flex:1;background:transparent;color:var(--muted);padding:10px 0;font-size:14px;border-radius:10px}
+.seg button.active{background:var(--card);color:var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.08);font-weight:700}
+
+/* 底部导航 */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-top:1px solid var(--gray);display:flex;padding:6px 4px calc(8px + env(safe-area-inset-bottom));z-index:99}
+.tabbar button{flex:1;background:none;color:var(--muted);font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 0;margin:0;border-radius:12px}
+.tabbar button .ic{font-size:21px;line-height:1}
+.tabbar button.active{color:var(--primary);background:rgba(54,113,233,.08)}
+.tabbar button.active .ic{transform:scale(1.08)}
+
+/* ===== 口播页 ===== */
+.speak-card{text-align:center;padding:28px 16px}
+.rec-ring{position:relative;width:96px;height:96px;margin:6px auto 14px}
+.rec-btn{width:88px;height:88px;border-radius:50%;background:var(--grad);color:#fff;font-size:14px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;margin:0 auto;box-shadow:0 10px 28px rgba(54,113,233,.38);border:none;cursor:pointer;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2}
+.rec-btn .mic{font-size:26px;line-height:1}
+.rec-btn.recording{background:var(--danger);box-shadow:0 10px 28px rgba(255,77,106,.4);animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,77,106,.45)}70%{box-shadow:0 0 0 20px rgba(255,77,106,0)}100%{box-shadow:0 0 0 0 rgba(255,77,106,0)}}
+.rec-ring .wave{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(54,113,233,.25);opacity:0;z-index:1}
+.rec-ring.playing .wave{animation:wave 1.5s infinite}
+.rec-ring.playing .wave:nth-child(2){animation-delay:.4s}
+.rec-ring.playing .wave:nth-child(3){animation-delay:.8s}
+@keyframes wave{0%{transform:scale(.7);opacity:1}100%{transform:scale(1.25);opacity:0}}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.stat-box{background:var(--bg);border-radius:12px;padding:10px;text-align:center}
+.stat-box .num{font-size:18px;font-weight:800;color:var(--primary)}
+.stat-box .lbl{font-size:12px;color:var(--muted);margin-top:2px}
+.ctrl-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctrl-row select{flex:1;min-width:90px}
+.ctrl-row .rate-wrap{flex:1.4;display:flex;align-items:center;gap:6px;min-width:120px}
+.ctrl-row input[type=range]{flex:1;accent-color:var(--primary)}
+.ctrl-row .rate-val{font-size:13px;color:var(--muted);min-width:32px;text-align:center}
+.small-btn{padding:9px 12px;font-size:14px;border-radius:10px}
+.out-box{background:var(--bg);border-radius:14px;padding:14px;margin-top:10px;white-space:pre-wrap;font-size:15px;line-height:1.7;min-height:70px}
+.score-wrap{display:flex;align-items:center;gap:14px;margin-top:12px}
+.score-ring{flex-shrink:0}
+
+/* ===== 单词页（词达人风格） ===== */
+.progress-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.progress-head b{color:var(--primary);font-size:15px}
+.progress-track{height:9px;background:var(--gray);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:var(--grad);border-radius:99px;transition:width .35s;width:0%}
+.group-chips{display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.group-chips::-webkit-scrollbar{display:none}
+.group-chips .chip{flex-shrink:0;padding:8px 14px;border-radius:99px;background:var(--gray);font-size:13px;color:var(--muted);cursor:pointer;border:none;font-weight:600}
+.group-chips .chip.active{background:var(--grad);color:#fff}
+
+.word-card{text-align:center;padding:34px 20px 26px;border-radius:22px;background:var(--card);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.word-card::before{content:"";position:absolute;top:-50px;right:-50px;width:140px;height:140px;border-radius:50%;background:linear-gradient(135deg,rgba(54,113,233,.08),rgba(122,92,255,.06))}
+.word-card .w-index{font-size:12px;color:var(--muted);margin-bottom:18px}
+.word-card .w-word{font-size:42px;font-weight:800;letter-spacing:.5px;word-break:break-all}
+.word-card .w-ipa{font-size:16px;color:var(--muted);margin-top:8px}
+.word-card .w-speak{width:52px;height:52px;border-radius:50%;background:var(--grad);color:#fff;font-size:20px;margin:18px auto 0;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(54,113,233,.3);border:none;cursor:pointer}
+.word-card .w-mean{min-height:56px;display:flex;flex-direction:column;justify-content:center;margin-top:20px;padding:14px 10px;background:var(--bg);border-radius:14px}
+.word-card .w-mean .pos{color:var(--primary);font-size:14px;font-weight:700}
+.word-card .w-mean .mean{font-size:19px;font-weight:700;margin-top:3px}
+.word-card .w-mean .ex{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6}
+.word-card .w-mean .hint{font-size:14px;color:var(--muted)}
+.assess-row{display:flex;gap:8px;margin-top:16px}
+.assess-row button{flex:1;padding:13px 4px;border-radius:14px;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.assess-row .a-ic{font-size:20px}
+.word-feedback{text-align:center;font-size:14px;margin-top:12px;min-height:22px;font-weight:600}
+.word-next{margin-top:12px}
+.finish-box{text-align:center;padding:30px 20px}
+.finish-box .trophy{font-size:44px}
+.finish-box h4{font-size:18px;margin:10px 0 6px}
+.finish-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.finish-stats .f{background:var(--bg);border-radius:12px;padding:10px}
+.finish-stats .f b{font-size:20px;display:block}
+.finish-stats .f.ok-c{color:var(--ok)}.finish-stats .f.fz-c{color:var(--warn)}.finish-stats .f.no-c{color:var(--danger)}
+.collapse-title{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:8px}
+.collapse-title span{transition:.2s}
+
+/* ===== 题库 ===== */
+.cet-item{padding:12px;border-radius:12px;border:1px solid var(--gray);margin-bottom:10px;cursor:pointer;font-size:14px;line-height:1.7;transition:.15s}
+.cet-item:active{transform:scale(.98)}
+.cet-item .t{font-weight:700;color:var(--primary);font-size:14px;margin-bottom:4px}
+
+/* ===== AI口语 ===== */
+.chat-log{background:var(--bg);border-radius:14px;padding:14px;min-height:120px;font-size:15px;line-height:1.8;white-space:pre-wrap;margin-top:10px;max-height:320px;overflow:auto}
+.chat-log .me{color:var(--primary);font-weight:700}
+.chat-log .ai{color:var(--text)}
+.chat-log .sys{color:var(--muted);font-size:13px}
+.tip{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.6}
+
+/* ===== 设置 ===== */
+.set-row{margin-bottom:12px}
+.set-row label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+.set-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.12);color:var(--ok);font-size:12px;padding:5px 10px;border-radius:99px;margin-bottom:10px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-badge">C4</div>
+      <h1>四六级口语单词助手</h1>
+    </div>
+    <button class="icon-btn" onclick="toggleDark()" title="深色模式">🌓</button>
+  </header>
+
+  <main>
+
+  <!-- ========== 口播 ========== -->
+  <div id="panel-speech">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>朗读文稿</div>
+      <textarea id="textSrc" placeholder="粘贴四级作文、翻译、演讲稿，或点下方「示例」快速体验"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="small-btn sec" onclick="fillExample()">📋 示例</button>
+        <button class="small-btn" onclick="textSpeak()">🔊 跟读</button>
+      </div>
+    </div>
+
+    <div class="card speak-card">
+      <div class="rec-ring" id="recRing">
+        <span class="wave"></span><span class="wave"></span><span class="wave"></span>
+        <button class="rec-btn" id="btnRec" onclick="speechRec()">
+          <span class="mic">🎤</span><span id="recLabel">开始录音</span>
+        </button>
+      </div>
+      <div class="ctrl-row">
+        <select id="langSel">
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
+        <div class="rate-wrap">
+          <input type="range" id="rateRange" min="0.5" max="1.5" step="0.1" value="1">
+          <span class="rate-val" id="rateVal">1.0</span>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="num" id="recDur">0</div><div class="lbl">录音时长(s)</div></div>
+        <div class="stat-box"><div class="num" id="speedInfo">--</div><div class="lbl">语速</div></div>
+      </div>
+      <button class="btn" id="btnAiEval" onclick="aiEvaluate()" disabled style="margin-top:12px">✨ AI打分纠错</button>
+      <button class="btn sec" onclick="clearResult()" style="margin-top:8px">清空结果</button>
+    </div>
+
+    <div class="card" id="cardResult" style="display:none">
+      <div class="card-title"><span class="dot"></span>识别结果</div>
+      <div class="out-box" id="result">录音识别结果</div>
+      <div id="aiReport" class="out-box" style="margin-top:10px;display:none"></div>
+    </div>
+  </div>
+
+  <!-- ========== 单词（词达人风格） ========== -->
+  <div id="panel-word" style="display:none">
+    <div class="seg">
+      <button class="active" id="segCard" onclick="setWordMode('card')">📖 词卡自评</button>
+      <button id="segSpell" onclick="setWordMode('spell')">✍️ 听音拼写</button>
+    </div>
+
+    <div class="group-chips" id="groupChips" style="display:none"></div>
+    <div class="card" id="progressCard" style="display:none">
+      <div class="progress-head"><span>今日学习</span><b id="progressTxt">0/0</b></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="row" id="progressDetail" style="margin:8px 0 0;font-size:12px;color:var(--muted)"></div>
+    </div>
+
+    <!-- 词卡模式 -->
+    <div id="cardMode">
+      <div class="word-card" id="cardArea">
+        <div class="w-index" id="wIndex">第 1 / 20 词</div>
+        <div class="w-word" id="wWord">----</div>
+        <div class="w-ipa" id="wIpa">----</div>
+        <button class="w-speak" onclick="speakCard()">🔊</button>
+        <div class="w-mean">
+          <div class="hint" id="wMeanHint">👆 先在心里回想意思，再选认识程度</div>
+          <div id="wMeanBody" style="display:none">
+            <div class="pos" id="wPos"></div>
+            <div class="mean" id="wMean"></div>
+            <div class="ex" id="wEx"></div>
+          </div>
+        </div>
+      </div>
+      <div class="assess-row">
+        <button class="ok" onclick="selfAssess('know')"><span class="a-ic">😀</span>认识</button>
+        <button class="warn" onclick="selfAssess('fuzzy')"><span class="a-ic">😕</span>模糊</button>
+        <button class="bad" onclick="selfAssess('no')"><span class="a-ic">😵</span>不认识</button>
+      </div>
+      <div class="word-feedback" id="wordFeedback"></div>
+      <button class="btn word-next" id="btnNext" onclick="nextCard()" style="display:none">下一个 →</button>
+      <div class="row" style="justify-content:center">
+        <button class="small-btn sec" onclick="showMeanNow()" id="btnShowMean">💡 显示释义</button>
+        <button class="small-btn sec" id="btnCardAi" onclick="aiExplainCard()" disabled>AI详解</button>
+      </div>
+    </div>
+
+    <!-- 听音拼写模式 -->
+    <div id="spellMode" style="display:none">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>听音拼写</div>
+        <div class="word-card" style="padding:24px 16px">
+          <div class="w-index">当前第 <b id="spellIdx">0</b> 词</div>
+          <div class="w-ipa" style="font-size:20px;margin:10px 0" id="wordTip">----</div>
+          <button class="w-speak" onclick="speakWord()">🔊 再听</button>
+        </div>
+        <input id="wordInput" placeholder="输入单词答案" style="margin-top:12px">
+        <div class="row" style="margin-top:10px">
+          <button class="ok" onclick="checkWord()">核对</button>
+          <button class="sec" onclick="nextWord()">下一个</button>
+          <button id="btnWordAi" onclick="aiExplainWord()" disabled>AI详解</button>
+        </div>
+        <div class="out-box" id="wordRes" style="margin-top:10px;min-height:44px"></div>
+      </div>
+    </div>
+
+    <!-- 导入单词 -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>📥 导入单词</div>
+      <textarea id="wordList" placeholder="支持两种格式：
+① 纯单词：apple book study（空格分隔）
+② 单词+释义：apple 苹果  /  book,书（每行一个）
+自动按 10 个一组分组，一行一词更好"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button onclick="loadWords()">加载单词</button>
+        <button class="sec" onclick="loadCet4Words()">一键四级高频词</button>
+        <button class="sec" onclick="document.getElementById('importFile').click()">📂 导入文件</button>
+      </div>
+      <input type="file" id="importFile" accept=".txt,.csv" style="display:none" onchange="importFile()">
+      <p class="tip">支持 txt / csv 文件，每行一个单词（可带中文释义，如「apple 苹果」）。加载后自动按 10 个一组分组，一组一组过。</p>
+    </div>
+  </div>
+
+  <!-- ========== 题库 ========== -->
+  <div id="panel-cet4" style="display:none">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>四级真题素材库</div>
+      <select id="cetType">
+        <option value="essay">📝 写作范文</option>
+        <option value="listen">🎧 听力原文</option>
+        <option value="trans">🀄 翻译话题</option>
+      </select>
+      <button class="btn" onclick="loadCet4Item()" style="margin-top:10px">加载素材</button>
+    </div>
+    <div class="card" id="cet4Lib"></div>
+    <button class="btn" onclick="sendToSpeech()" style="margin-top:4px">➡️ 导入「口播」页朗读练习</button>
+  </div>
+
+  <!-- ========== AI口语 ========== -->
+  <div id="panel-chat" style="display:none">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>AI 即兴口语练习</div>
+      <select id="chatMode" style="margin-bottom:10px">
+        <option value="zh">中文口播训练</option>
+        <option value="en">English Oral</option>
+      </select>
+      <textarea id="chatBox" placeholder="输入话题，或点下方录音开口说"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="ok" onclick="chatRec()">🎤 录音</button>
+        <button onclick="sendChat()">发送 AI</button>
+        <button class="sec" onclick="clearChat()">清空</button>
+      </div>
+      <div class="chat-log" id="chatResult"></div>
+      <p class="tip">录音完成后识别文字会自动填入输入框，点「发送 AI」即可对话。</p>
+    </div>
+  </div>
+
+  <!-- ========== 设置 ========== -->
+  <div id="panel-setting" style="display:none">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>AI 接口设置</div>
+      <div class="set-badge">✅ 不填 API 也能用全部离线功能</div>
+      <div class="set-row"><label>API Key（豆包 / DeepSeek 通用）</label><input id="apiKey" placeholder="sk-xxxx"></div>
+      <div class="set-row"><label>API 地址</label><input id="apiUrl" value="https://api.deepseek.com/v1/chat/completions"></div>
+      <div class="set-row"><label>模型名称</label><input id="modelName" value="deepseek-chat"></div>
+      <div class="row">
+        <button onclick="saveApi()">💾 保存设置</button>
+        <button class="sec" onclick="toggleDark()">🌓 深色模式</button>
+      </div>
+      <p class="tip">AI 打分、AI 详解、AI 对话需要 API Key。录音、跟读、词卡、题库离线可用。</p>
+    </div>
+  </div>
+
+  </main>
+
+  <!-- 底部导航 -->
+  <nav class="tabbar">
+    <button class="active" data-tab="speech" onclick="switchTab('speech')"><span class="ic">🎙️</span>口播</button>
+    <button data-tab="word" onclick="switchTab('word')"><span class="ic">📖</span>单词</button>
+    <button data-tab="cet4" onclick="switchTab('cet4')"><span class="ic">📚</span>题库</button>
+    <button data-tab="chat" onclick="switchTab('chat')"><span class="ic">💬</span>AI口语</button>
+    <button data-tab="setting" onclick="switchTab('setting')"><span class="ic">⚙️</span>设置</button>
+  </nav>
+</div>
+
+<script>
+/* ================= 数据 ================= */
+const cet4Data = {
+  essay:[
+    {title:"范文1 线上学习",content:"Directions: For this part, you are allowed 30 minutes to write an essay on online study. You should write at least 120 words.\nOnline study has become increasingly popular in recent years. It brings great convenience to students. We can learn knowledge at any time and anywhere. It also saves time on the way to school. However, online learning requires strong self-discipline. Without proper supervision, some students may get distracted. In my opinion, we should make good use of online resources and form a good learning habit."},
+    {title:"范文2 阅读的意义",content:"Directions: For this part, you are allowed 30 minutes to write an essay about the importance of reading. You should write at least 120 words.\nReading is one of the best habits for young people. Books open a new world for us. We can learn history, culture and different ideas from books. Reading helps us improve our vocabulary and writing skills. It also calms our mind when we feel upset. As college students, we should spend more time reading useful books instead of wasting time on meaningless short videos."},
+    {title:"范文3 运动健康",content:"Directions: For this part, you are allowed 30 minutes to write an essay on doing sports. You should write at least 120 words.\nDoing sports is essential for college students. Regular exercise keeps us healthy and energetic. It can reduce stress from study and help us sleep better. Taking part in sports also teaches us teamwork. Many students stay indoors all day and lack exercise. We should set aside time every day for running, ball games or other sports."}
+  ],
+  listen:[
+    {title:"长对话 图书馆场景",content:"W: Excuse me, where can I find books on computer science?\nM: They are on the second floor.\nW: Can I borrow them with my student card?\nM: Yes, you can borrow up to five books for one month.\nW: What if I cannot finish reading on time?\nM: You can renew them online before the deadline."},
+    {title:"短篇听力 环境保护",content:"Nowadays, environmental protection has drawn wide attention. Waste and pollution are serious problems. Everyone can do small things to protect the earth. We can save water and electricity. We should sort rubbish and choose reusable bags. Small actions together will make a big difference."}
+  ],
+  trans:[
+    {title:"中国茶文化",content:"中国是茶的故乡。中国人饮茶已有几千年历史。茶是中国最重要的饮品之一。喝茶有助于放松身心。中国有很多名茶，例如绿茶、红茶。茶文化也传播到世界各地。"},
+    {title:"春节传统",content:"春节是中国最重要的传统节日。每到春节，家人团聚，一起吃年夜饭。人们贴春联、放烟花、拜年。孩子们可以收到红包。春节象征着团圆与新的开始。"},
+    {title:"共享单车",content:"共享单车在中国城市很流行。它方便短途出行，绿色环保。骑车可以锻炼身体，缓解交通压力。越来越多年轻人喜欢骑共享单车上下班。"}
+  ]
+};
+
+/* 内置词库：单词 → 音标 / 词性 / 释义 / 例句 */
+const wordBank = {
+  "opportunity":{ipa:"/ˌɒpəˈtjuːnəti/",pos:"n.",mean:"机会；时机",ex:"This is a great opportunity to learn."},
+  "convenient":{ipa:"/kənˈviːniənt/",pos:"adj.",mean:"方便的；便利的",ex:"Online shopping is very convenient."},
+  "discipline":{ipa:"/ˈdɪsəplɪn/",pos:"n.",mean:"自律；纪律",ex:"Learning requires self-discipline."},
+  "benefit":{ipa:"/ˈbenɪfɪt/",pos:"n. / v.",mean:"好处；受益",ex:"Exercise brings many benefits."},
+  "available":{ipa:"/əˈveɪləbl/",pos:"adj.",mean:"可获得的；有空的",ex:"The book is available online."},
+  "effective":{ipa:"/ɪˈfektɪv/",pos:"adj.",mean:"有效的",ex:"This is an effective way to study."},
+  "traditional":{ipa:"/trəˈdɪʃənl/",pos:"adj.",mean:"传统的",ex:"Spring Festival is a traditional holiday."},
+  "culture":{ipa:"/ˈkʌltʃə(r)/",pos:"n.",mean:"文化",ex:"China has a rich culture."},
+  "atmosphere":{ipa:"/ˈætməsfɪə(r)/",pos:"n.",mean:"气氛；氛围",ex:"The classroom has a good learning atmosphere."},
+  "economy":{ipa:"/ɪˈkɒnəmi/",pos:"n.",mean:"经济",ex:"The economy is developing fast."},
+  "phenomenon":{ipa:"/fəˈnɒmɪnən/",pos:"n.",mean:"现象",ex:"It is a common phenomenon in cities."},
+  "responsibility":{ipa:"/rɪˌspɒnsəˈbɪləti/",pos:"n.",mean:"责任；职责",ex:"We should take responsibility for our study."},
+  "attitude":{ipa:"/ˈætɪtjuːd/",pos:"n.",mean:"态度",ex:"A positive attitude matters a lot."},
+  "concentrate":{ipa:"/ˈkɒnsntreɪt/",pos:"v.",mean:"集中（注意力）",ex:"Try to concentrate on your work."},
+  "circumstance":{ipa:"/ˈsɜːkəmstəns/",pos:"n.",mean:"环境；情况",ex:"Under no circumstance give up."},
+  "decorate":{ipa:"/ˈdekəreɪt/",pos:"v.",mean:"装饰；布置",ex:"We decorate the room for the festival."},
+  "demonstrate":{ipa:"/ˈdemənstreɪt/",pos:"v.",mean:"演示；证明",ex:"Let me demonstrate how it works."},
+  "efficient":{ipa:"/ɪˈfɪʃnt/",pos:"adj.",mean:"高效的",ex:"This method is more efficient."},
+  "flexible":{ipa:"/ˈfleksəbl/",pos:"adj.",mean:"灵活的",ex:"My schedule is quite flexible."},
+  "generate":{ipa:"/ˈdʒenəreɪt/",pos:"v.",mean:"产生；生成",ex:"Wind can generate electricity."}
+};
+const cet4WordList = "opportunity convenient discipline benefit available effective traditional culture atmosphere economy phenomenon responsibility attitude concentrate circumstance decorate demonstrate efficient flexible generate";
+
+let currentCetText = "";
+
+/* ================= 状态 ================= */
+let currentTab = 'speech';
+let recorder = null;
+let audioStream = null;
+let recTimer = null;
+let recStart = null;
+let apiKey = localStorage.getItem('apiKey') || '';
+let apiUrl = localStorage.getItem('apiUrl') || 'https://api.deepseek.com/v1/chat/completions';
+let modelName = localStorage.getItem('modelName') || 'deepseek-chat';
+let lastText = '';
+let lastRecText = '';
+
+/* 单词词卡状态 */
+let wordMode = 'card';
+let cardWords = [];
+let groups = [];        // 按 10 个一组分好的小组
+let groupIdx = 0;       // 当前小组
+let cardIdx = 0;
+let stats = {know:0, fuzzy:0, no:0};
+let assessed = false;
+let customMeans = {};   // 自定义导入的释义 word -> mean
+
+const $ = id => document.getElementById(id);
+const resultEl = $('result');
+const aiReportEl = $('aiReport');
+const btnAiEval = $('btnAiEval');
+const btnWordAi = $('btnWordAi');
+const btnCardAi = $('btnCardAi');
+const rateRange = $('rateRange');
+const rateVal = $('rateVal');
+rateRange.oninput = () => rateVal.innerText = rateRange.value;
+
+/* ================= 页面切换 ================= */
+function switchTab(tab){
+  currentTab = tab;
+  ['speech','word','cet4','chat','setting'].forEach(t=>{
+    $('panel-'+t).style.display = t===tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tabbar button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+}
+
+/* ================= 口播：录音与识别 ================= */
+function speechRec(){
+  if(recorder && recorder.state !== 'inactive'){ stopRec(); return; }
+  startRec($('langSel').value === 'zh' ? 'zh-CN' : 'en-US', null);
+}
+function stopRec(){
+  if(recorder && recorder.state !== 'inactive') recorder.stop();
+}
+
+async function startRec(lang, onDone){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showResult("❌ 当前浏览器不支持录音。请用 Chrome 或 Edge 最新版打开本页。");
+    return;
+  }
+  if(typeof MediaRecorder === 'undefined'){
+    showResult("❌ 当前浏览器不支持录音（缺少 MediaRecorder）。请用 Chrome 或 Edge。");
+    return;
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    audioStream = stream;
+    recorder = new MediaRecorder(stream);
+    recStart = Date.now();
+    $('btnRec').classList.add('recording');
+    $('recRing').classList.add('playing');
+    $('recLabel').innerText = "停止";
+    $('recDur').innerText = "0";
+    $('speedInfo').innerText = "--";
+    recTimer = setInterval(()=>{
+      $('recDur').innerText = Math.floor((Date.now()-recStart)/1000);
+    }, 500);
+    recorder.ondataavailable = ()=>{};
+    recorder.onstop = ()=>{
+      clearInterval(recTimer);
+      $('btnRec').classList.remove('recording');
+      $('recRing').classList.remove('playing');
+      $('recLabel').innerText = "开始录音";
+      if(audioStream){ audioStream.getTracks().forEach(t=>t.stop()); audioStream = null; }
+      recognizeAudio(lang, onDone);
+    };
+    recorder.start();
+    showResult("🎤 正在录音，请开口朗读；说完再点按钮停止");
+  }catch(e){
+    $('recLabel').innerText = "开始录音";
+    showResult("❌ 无法使用麦克风：请点击浏览器地址栏左侧锁形图标 → 允许麦克风权限后，再试一次。");
+  }
+}
+
+function showResult(txt){
+  $('cardResult').style.display = 'block';
+  resultEl.innerText = txt;
+}
+
+function recognizeAudio(lang, onDone){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    const msg = "⚠️ 当前浏览器不支持语音识别（需要 Chrome / Edge）。录音已结束，可手动对照原文练习。";
+    if(onDone){ onDone(""); return; }
+    showResult(msg);
+    return;
+  }
+  if(onDone) $('chatResult').innerText += "\n🎤 正在识别录音...\n";
+  showResult("录音完成，识别中...");
+  const sr = new SR();
+  sr.lang = lang;
+  sr.interimResults = false;
+  sr.maxAlternatives = 1;
+  sr.onresult = (e)=>{
+    let txt = "";
+    for(let i=0;i<e.results.length;i++){
+      if(e.results[i] && e.results[i][0]) txt += e.results[i][0].transcript;
+    }
+    lastRecText = txt;
+    if(onDone){
+      $('chatResult').innerText = $('chatResult').innerText.replace("\n🎤 正在识别录音...\n","");
+      if(txt) $('chatResult').innerText += "🎤 我（录音）："+txt+"\n";
+      $('chatBox').value = txt;
+      return;
+    }
+    showResult("识别内容：\n" + txt);
+    lastText = $('textSrc').value.trim();
+    btnAiEval.disabled = !apiKey;
+    calcSpeed(txt);
+  };
+  sr.onerror = (e)=>{
+    let hint = "";
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed') hint = "麦克风权限被拒绝，请检查地址栏权限设置";
+    else if(e.error === 'network') hint = "语音识别服务连不上（网络或区域限制），请联网重试";
+    else if(e.error === 'no-speech') hint = "没有听到声音，请靠近麦克风再试";
+    else hint = "错误：" + e.error;
+    if(onDone){
+      $('chatResult').innerText = $('chatResult').innerText.replace("\n🎤 正在识别录音...\n","");
+      $('chatResult').innerText += "⚠️ 识别失败：" + hint + "\n";
+      return;
+    }
+    showResult("⚠️ 识别失败：" + hint + "\n录音已完成，可手动对照练习。");
+  };
+  try{ sr.start(); }
+  catch(err){ showResult("⚠️ 无法启动识别：" + err.message); }
+}
+
+function calcSpeed(txt){
+  const dur = Math.floor((Date.now()-recStart)/1000) || 1;
+  const lang = $('langSel').value;
+  let speed;
+  if(lang === 'zh') speed = Math.round(txt.replace(/\s/g,'').length/dur*60) + " 字/分";
+  else speed = Math.round(txt.split(/\s+/).filter(Boolean).length/dur*60) + " 词/分";
+  $('speedInfo').innerText = speed;
+  $('recDur').innerText = dur;
+}
+
+/* ================= 口播：跟读 / 示例 / AI打分 ================= */
+function textSpeak(){
+  const t = $('textSrc').value.trim();
+  if(!t) return alert("请先粘贴或输入文稿");
+  const u = new SpeechSynthesisUtterance(t);
+  u.rate = parseFloat(rateRange.value);
+  u.lang = $('langSel').value === 'zh' ? 'zh-CN' : 'en-US';
+  speechSynthesis.speak(u);
+}
+function fillExample(){
+  $('textSrc').value = cet4Data.essay[0].content.split("\n").slice(1).join("\n");
+  $('langSel').value = "en";
+  alert("已填入一篇四级范文，点「🔊 跟读」或录音练习");
+}
+
+async function aiEvaluate(){
+  if(!apiKey) return alert("请先到「设置」页填写 API Key 才能用 AI 打分");
+  const origin = $('textSrc').value.trim();
+  if(!origin) return alert("请先输入原文");
+  const recTxt = lastRecText;
+  const lang = $('langSel').value;
+  $('aiReport').style.display = 'block';
+  aiReportEl.innerText = "AI 评测中，请稍候...";
+  const prompt = lang === 'zh'
+    ? `你是专业中文口播老师。原文：${origin}\n用户朗读：${recTxt}。请输出：1) 错读/漏读标注 2) 流利度打分 x/10 3) 节奏打分 x/10 4) 简短的优化建议。`
+    : `You are an English oral teacher. Original: ${origin}\nUser read: ${recTxt}. Output: 1) error/missing words 2) fluency score x/10 3) pronunciation score x/10 4) short advice.`;
+  try{
+    const res = await fetch(apiUrl,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:modelName,messages:[{role:"user",content:prompt}],temperature:0.3})
+    });
+    if(!res.ok){
+      aiReportEl.innerText = "❌ API 请求失败（"+res.status+"）：请检查 API 地址、Key 是否正确，或余额是否充足。";
+      return;
+    }
+    const j = await res.json();
+    const content = j.choices?.[0]?.message?.content || "评测失败，请重试";
+    const nums = content.match(/(\d+(?:\.\d+)?)\s*\/\s*10/g);
+    if(nums && nums.length){
+      const first = parseFloat(nums[0]);
+      const score = Math.min(10, Math.max(0, first));
+      aiReportEl.innerHTML = '<div class="score-wrap"><div class="score-ring">'+ringSvg(score)+'</div><div>'+escHtml(content)+'</div></div>';
+    }else{
+      aiReportEl.innerText = content;
+    }
+  }catch(e){
+    aiReportEl.innerText = "❌ 网络错误：" + e.message + "（检查网络或 API 地址）";
+  }
+}
+function ringSvg(score){
+  const r = 30, c = 2*Math.PI*r;
+  const pct = (score/10)*c;
+  return `<svg width="76" height="76" viewBox="0 0 76 76">
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--gray)" stroke-width="7"/>
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="url(#sg)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${pct} ${c}" transform="rotate(-90 38 38)"/>
+    <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3671e9"/><stop offset="100%" stop-color="#7a5cff"/></linearGradient></defs>
+    <text x="38" y="44" text-anchor="middle" font-size="20" font-weight="800" fill="var(--text)">${score}</text>
+  </svg>`;
+}
+function escHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+/* ================= 单词：词卡模式（词达人风格） ================= */
+function setWordMode(mode){
+  wordMode = mode;
+  $('segCard').classList.toggle('active', mode==='card');
+  $('segSpell').classList.toggle('active', mode==='spell');
+  $('cardMode').style.display = mode==='card' ? 'block' : 'none';
+  $('spellMode').style.display = mode==='spell' ? 'block' : 'none';
+}
+
+function loadWords(){
+  parseWordInput();
+  if(!words.length){ alert("请先输入或导入单词"); return; }
+  wordIdx = 0;
+  buildCards(words);
+  // 按 10 个一组分组
+  groups = [];
+  for(let i=0;i<cardWords.length;i+=10) groups.push(cardWords.slice(i,i+10));
+  groupIdx = 0;
+  setWordMode('card');
+  renderGroupChips();
+  enterGroup(0);
+  alert("已加载 " + words.length + " 个单词，自动分成 " + groups.length + " 组，开始词卡自评！");
+}
+function parseWordInput(){
+  const str = $('wordList').value.trim();
+  const lines = str.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+  words = [];
+  customMeans = {};
+  lines.forEach(line=>{
+    // 拆「单词 中文释义」：要求释义部分含非英文字符（中文/符号），避免把整行单词列表误当释义
+    const m = line.match(/^([A-Za-z][A-Za-z\-\']*)[\s,，:：]+(.+)$/);
+    if(m && /[^\u0000-\u007F]/.test(m[2])){
+      const w = m[1].toLowerCase();
+      words.push(w);
+      let mean = m[2].trim();
+      mean = mean.replace(/^\/[^/]+\/\s*/,'').replace(/^\[[^\]]+\]\s*/,'').trim();
+      customMeans[w] = mean || "自定义导入";
+    }else{
+      // 纯单词行：拆出所有英文词（支持整行空格分隔的多个词）
+      const parts = line.split(/[\s,，、]+/).filter(Boolean);
+      parts.forEach(p=>{
+        const w = p.toLowerCase().replace(/[^a-z\-']/g,'');
+        if(/^[a-z]/.test(w)) words.push(w);
+      });
+    }
+  });
+  words = [...new Set(words)];
+}
+function loadCet4Words(){
+  $('wordList').value = cet4WordList;
+  loadWords();
+}
+function importFile(){
+  const f = $('importFile').files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const buf = reader.result;
+    let text = "";
+    try{ text = new TextDecoder('utf-8', {fatal:true}).decode(buf); }
+    catch(e){
+      try{ text = new TextDecoder('gbk').decode(buf); }
+      catch(e2){ text = new TextDecoder('utf-8').decode(buf); }
+    }
+    $('wordList').value = text;
+    loadWords();
+  };
+  reader.readAsArrayBuffer(f);
+}
+function buildCards(arr){
+  cardWords = arr.map(w=>{
+    const low = w.toLowerCase();
+    const info = wordBank[low];
+    if(info) return {word:low, ipa:info.ipa, pos:info.pos, mean:info.mean, ex:info.ex};
+    if(customMeans[low]) return {word:low, ipa:"----", pos:"", mean:customMeans[low], ex:"自定义导入"};
+    return {word:low, ipa:"----", pos:"", mean:"自定义单词（无释义）", ex:"可点 AI 详解"};
+  });
+}
+function showCard(){
+  const list = groups[groupIdx] || [];
+  const total = list.length;
+  if(cardIdx >= total){ showGroupFinish(); return; }
+  const c = list[cardIdx];
+  $('wIndex').innerText = `第 ${groupIdx+1}/${groups.length} 组 · ${cardIdx+1}/${total} 词`;
+  $('wWord').innerText = c.word;
+  $('wIpa').innerText = c.ipa;
+  $('wMeanHint').style.display = 'block';
+  $('wMeanBody').style.display = 'none';
+  $('wordFeedback').innerText = "";
+  $('btnNext').style.display = 'none';
+  $('btnNext').onclick = nextCard;
+  $('btnShowMean').style.display = '';
+  $('btnCardAi').style.display = '';
+  assessed = false;
+  updateProgress(total);
+  btnCardAi.disabled = !apiKey;
+}
+function updateProgress(total){
+  const done = Math.min(cardIdx+1, total);
+  $('progressCard').style.display = 'block';
+  $('progressTxt').innerText = `第${groupIdx+1}/${groups.length}组 · ${done}/${total}`;
+  $('progressFill').style.width = (done/total*100) + '%';
+  $('progressDetail').innerHTML = `本组：认识 <b style="color:var(--ok)">${stats.know}</b> · 模糊 <b style="color:var(--warn)">${stats.fuzzy}</b> · 生词 <b style="color:var(--danger)">${stats.no}</b>`;
+}
+function selfAssess(level){
+  if(assessed) return;
+  const list = groups[groupIdx] || [];
+  const c = list[cardIdx];
+  stats[level]++;
+  assessed = true;
+  $('wMeanHint').style.display = 'none';
+  $('wMeanBody').style.display = 'block';
+  $('wPos').innerText = c.pos;
+  $('wMean').innerText = c.mean;
+  $('wEx').innerText = c.ex ? "📖 " + c.ex : "";
+  const fb = {know:"😀 认识！记得很牢", fuzzy:"😕 有点模糊，等下再复习", no:"😵 已标记生词，重点攻克"};
+  $('wordFeedback').innerText = fb[level];
+  $('btnNext').style.display = 'block';
+  $('btnNext').innerText = "下一个 →";
+  updateProgress(list.length);
+}
+function showMeanNow(){
+  if(cardIdx >= (groups[groupIdx]||[]).length || assessed) return;
+  const c = groups[groupIdx][cardIdx];
+  $('wMeanHint').style.display = 'none';
+  $('wMeanBody').style.display = 'block';
+  $('wPos').innerText = c.pos;
+  $('wMean').innerText = c.mean;
+  $('wEx').innerText = c.ex ? "📖 " + c.ex : "";
+  $('wordFeedback').innerText = "👆 看完释义，请选择认识程度";
+}
+function nextCard(){
+  cardIdx++;
+  showCard();
+}
+function enterGroup(gi){
+  if(gi < 0 || gi >= groups.length) return;
+  groupIdx = gi;
+  cardIdx = 0;
+  stats = {know:0, fuzzy:0, no:0};
+  assessed = false;
+  resetAssessRow();
+  renderGroupChips();
+  showCard();
+}
+function renderGroupChips(){
+  const wrap = $('groupChips');
+  if(groups.length <= 1){ wrap.style.display = 'none'; wrap.innerHTML = ""; return; }
+  wrap.style.display = 'flex';
+  let html = "";
+  groups.forEach((g,i)=>{
+    html += `<button class="chip ${i===groupIdx?'active':''}" onclick="enterGroup(${i})">第${i+1}组 (${g.length}词)</button>`;
+  });
+  wrap.innerHTML = html;
+}
+function resetAssessRow(){
+  const ar = document.querySelector('.assess-row');
+  ar.innerHTML = `<button class="ok" onclick="selfAssess('know')"><span class="a-ic">😀</span>认识</button>
+    <button class="warn" onclick="selfAssess('fuzzy')"><span class="a-ic">😕</span>模糊</button>
+    <button class="bad" onclick="selfAssess('no')"><span class="a-ic">😵</span>不认识</button>`;
+  $('btnShowMean').style.display = '';
+  $('btnCardAi').style.display = '';
+}
+function showGroupFinish(){
+  const list = groups[groupIdx] || [];
+  const total = list.length;
+  const hasNext = groupIdx < groups.length - 1;
+  $('progressFill').style.width = '100%';
+  $('progressTxt').innerText = `${groupIdx+1}/${groups.length} 组完成`;
+  $('wIndex').innerText = hasNext ? "本组完成 🎉" : "全部完成 🎉";
+  $('wWord').innerText = "🎉";
+  $('wIpa').innerText = hasNext ? "点击下方进入下一组" : "所有单词学习完毕";
+  $('wMeanHint').style.display = 'none';
+  $('wMeanBody').style.display = 'none';
+  $('wordFeedback').innerText = "";
+  $('btnNext').style.display = 'block';
+  $('btnNext').innerText = hasNext ? "下一组 →" : "🔄 再来一轮";
+  $('btnNext').onclick = hasNext ? ()=>{ enterGroup(groupIdx+1); } : ()=>{ restartAll(); };
+  $('btnShowMean').style.display = 'none';
+  $('btnCardAi').style.display = 'none';
+  const ar = document.querySelector('.assess-row');
+  ar.innerHTML = "";
+  $('progressDetail').innerHTML = `本组：认识 <b style="color:var(--ok)">${stats.know}</b> · 模糊 <b style="color:var(--warn)">${stats.fuzzy}</b> · 生词 <b style="color:var(--danger)">${stats.no}</b>`;
+  if(!hasNext) alert("🎉 全部 " + cardWords.length + " 个单词学习完成！");
+}
+function restartAll(){
+  groupIdx = 0;
+  cardIdx = 0;
+  stats = {know:0, fuzzy:0, no:0};
+  assessed = false;
+  resetAssessRow();
+  renderGroupChips();
+  showCard();
+}
+function speakCard(){
+  const list = groups[groupIdx] || [];
+  if(cardIdx >= list.length) return;
+  const w = list[cardIdx].word;
+  const u = new SpeechSynthesisUtterance(w);
+  u.lang = 'en-US';
+  u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+async function aiExplainCard(){
+  if(!apiKey) return alert("请先到「设置」页填写 API Key");
+  const list = groups[groupIdx] || [];
+  if(cardIdx >= list.length) return;
+  const w = list[cardIdx].word;
+  $('wordFeedback').innerText = "AI 讲解中...";
+  try{
+    const res = await fetch(apiUrl,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:modelName,messages:[{role:"user",content:"讲解四级单词 "+w+"：音标、释义、常用搭配、一个四级真题例句，用中文回答"}]})
+    });
+    if(!res.ok){ $('wordFeedback').innerText = "❌ API 请求失败（"+res.status+"）"; return; }
+    const j = await res.json();
+    const content = j.choices?.[0]?.message?.content || "讲解失败，请重试";
+    $('wordFeedback').innerText = "";
+    $('wEx').innerText = "🤖 " + content;
+  }catch(e){
+    $('wordFeedback').innerText = "❌ 网络错误：" + e.message;
+  }
+}
+function toggleDark(){ document.body.classList.toggle('dark'); }
+let words = [];
+let wordIdx = 0;
+function showWord(){
+  if(!words.length){ $('wordTip').innerText = "请先在下方「加载单词」或「一键四级高频词」"; return; }
+  if(wordIdx >= words.length){ $('wordTip').innerText = "✅ 单词练习结束"; return; }
+  $('wordTip').innerText = "----";
+  $('spellIdx').innerText = wordIdx + 1;
+  $('wordInput').value = "";
+  btnWordAi.disabled = !apiKey;
+  $('wordRes').innerText = "";
+}
+function speakWord(){
+  if(wordIdx >= words.length) return;
+  const u = new SpeechSynthesisUtterance(words[wordIdx]);
+  u.lang = /[a-zA-Z]/.test(words[wordIdx]) ? 'en-US' : 'zh-CN';
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+function checkWord(){
+  if(wordIdx >= words.length) return;
+  const ans = $('wordInput').value.trim().toLowerCase();
+  const real = words[wordIdx].toLowerCase();
+  if(!ans) return alert("请输入答案再核对");
+  $('wordRes').innerText = ans === real ? "✅ 正确！" : "❌ 错误，正确：" + words[wordIdx];
+}
+function nextWord(){
+  wordIdx++;
+  showWord();
+}
+async function aiExplainWord(){
+  if(!apiKey) return alert("请先到「设置」页填写 API Key");
+  if(wordIdx >= words.length) return;
+  const w = words[wordIdx];
+  $('wordRes').innerText = "AI 讲解中...";
+  try{
+    const res = await fetch(apiUrl,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:modelName,messages:[{role:"user",content:"讲解四级单词 "+w+"：音标、释义、常用搭配、一个四级真题例句，用中文回答"}]})
+    });
+    if(!res.ok){ $('wordRes').innerText = "❌ API 请求失败（"+res.status+"）"; return; }
+    const j = await res.json();
+    $('wordRes').innerText = j.choices?.[0]?.message?.content || "讲解失败，请重试";
+  }catch(e){
+    $('wordRes').innerText = "❌ 网络错误：" + e.message;
+  }
+}
+
+/* ================= 题库 ================= */
+function loadCet4Item(){
+  const type = $('cetType').value;
+  const list = cet4Data[type];
+  let html = "";
+  list.forEach((item,idx)=>{
+    html += `<div class="cet-item" onclick="selectCet('${type}',${idx})"><div class="t">【${item.title}】</div>${escHtml(item.content)}</div>`;
+  });
+  $('cet4Lib').innerHTML = html;
+}
+function selectCet(type,idx){
+  currentCetText = cet4Data[type][idx].content;
+  $('cet4Lib').innerHTML = `<div class="cet-item" style="border:2px solid var(--primary)"><div class="t">已选：${cet4Data[type][idx].title} ✓</div>${escHtml(currentCetText)}</div>`;
+}
+function sendToSpeech(){
+  if(!currentCetText) return alert("请先在上方加载并点击选择一条素材");
+  $('textSrc').value = currentCetText;
+  $('langSel').value = /[a-zA-Z]/.test(currentCetText) ? "en" : "zh";
+  switchTab("speech");
+}
+
+/* ================= AI 口语 ================= */
+async function sendChat(){
+  const msg = $('chatBox').value.trim();
+  if(!msg) return alert("请输入话题或先录音");
+  if(!apiKey) return alert("请先到「设置」页填写 API Key 才能对话");
+  const mode = $('chatMode').value;
+  const sys = mode === 'zh'
+    ? "你是中文口语教练，用简短中文和学生对话，纠正表达并鼓励开口"
+    : "You are an English oral tutor. Reply in short simple English, correct the student gently and keep the conversation going.";
+  $('chatResult').innerText += "我：" + msg + "\n";
+  $('chatBox').value = "";
+  $('chatResult').innerText += "AI 思考中...\n";
+  $('chatResult').scrollTop = $('chatResult').scrollHeight;
+  try{
+    const res = await fetch(apiUrl,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:modelName,messages:[{role:"system",content:sys},{role:"user",content:msg}]})
+    });
+    if(!res.ok){
+      $('chatResult').innerText = $('chatResult').innerText.replace("AI 思考中...\n","") + "❌ API 请求失败（"+res.status+"）\n";
+      return;
+    }
+    const j = await res.json();
+    const reply = j.choices?.[0]?.message?.content || "出错";
+    $('chatResult').innerText = $('chatResult').innerText.replace("AI 思考中...\n","AI："+reply+"\n");
+    $('chatResult').scrollTop = $('chatResult').scrollHeight;
+  }catch(e){
+    $('chatResult').innerText = $('chatResult').innerText.replace("AI 思考中...\n","") + "❌ 网络错误：" + e.message + "\n";
+  }
+}
+function chatRec(){
+  const mode = $('chatMode').value;
+  const lang = mode === 'zh' ? 'zh-CN' : 'en-US';
+  startRec(lang, (txt)=>{
+    if(txt) $('chatBox').value = txt;
+  });
+}
+function clearChat(){
+  $('chatResult').innerText = "";
+  $('chatBox').value = "";
+}
+
+/* ================= 设置 ================= */
+function saveApi(){
+  apiKey = $('apiKey').value.trim();
+  apiUrl = $('apiUrl').value.trim() || 'https://api.deepseek.com/v1/chat/completions';
+  modelName = $('modelName').value.trim() || 'deepseek-chat';
+  localStorage.setItem('apiKey', apiKey);
+  localStorage.setItem('apiUrl', apiUrl);
+  localStorage.setItem('modelName', modelName);
+  btnAiEval.disabled = !apiKey;
+  btnWordAi.disabled = !apiKey;
+  btnCardAi.disabled = !apiKey;
+  alert("保存成功！");
+}
+function toggleDark(){ document.body.classList.toggle('dark'); }
+function clearResult(){
+  resultEl.innerText = '';
+  aiReportEl.innerText = '';
+  aiReportEl.style.display = 'none';
+  $('cardResult').style.display = 'none';
+  $('recDur').innerText = "0";
+  $('speedInfo').innerText = "--";
+}
+
+/* ================= 初始化 ================= */
+window.onload = ()=>{
+  $('apiKey').value = apiKey;
+  $('apiUrl').value = apiUrl;
+  $('modelName').value = modelName;
+  btnAiEval.disabled = !apiKey;
+  btnWordAi.disabled = !apiKey;
+  btnCardAi.disabled = !apiKey;
+};
+</script>
+</body>
+</html>
