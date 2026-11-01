@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>四六级口语单词助手 v4.0</title>
+<title>四六级口语单词助手 v4.1</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%233671e9'/%3E%3Cpath d='M30,25 L70,25 L70,75 L30,75 Z' fill='none' stroke='white' stroke-width='6'/%3E%3Cpath d='M40,40 L60,40 L60,60 L40,60 Z' fill='white'/%3E%3Cpath d='M75,35 Q85,45 75,55' stroke='white' stroke-width='5' fill='none'/%3E%3C/svg%3E">
 <meta name="theme-color" content="#3671e9">
 <style>
@@ -153,7 +153,7 @@ button.bad{background:var(--danger)}
   <header class="app-header">
     <div class="logo">
       <div class="logo-badge">C4</div>
-      <h1>四六级口语单词助手 <small style="font-size:11px;color:var(--muted);font-weight:400">v4.0</small></h1>
+      <h1>四六级口语单词助手 <small style="font-size:11px;color:var(--muted);font-weight:400">v4.1</small></h1>
     </div>
     <button class="icon-btn" onclick="toggleDark()" title="深色模式">🌓</button>
   </header>
@@ -370,7 +370,9 @@ button.bad{background:var(--danger)}
       <div class="set-row"><label>识别接口地址（OpenAI 兼容 /audio/transcriptions）</label><input id="asrUrl" placeholder="https://api.siliconflow.cn/v1/audio/transcriptions"></div>
       <div class="set-row"><label>识别 Key（硅基流动 / 其他兼容服务）</label><input id="asrKey" placeholder="sk-xxxx（不填则只能用系统识别）"></div>
       <div class="set-row"><label>识别模型</label><input id="asrModel" value="FunAudioLLM/SenseVoiceSmall"></div>
-      <p class="tip">安卓手机的 Chrome/TWA 不支持网页原生语音识别，所以「录音→自动转文字」必须靠云端接口；不填也能录音回放对照。</p>
+      <div class="set-row"><label>朗读模型（跟读/长句用）</label><input id="ttsModel" value="FunAudioLLM/CosyVoice2-0.5B"></div>
+      <div class="set-row"><label>朗读音色</label><input id="ttsVoice" value="anna"></div>
+      <p class="tip">同一个 Key 同时用于「识别」和「朗读」。手机的 Chrome/TWA 没有网页原生语音识别，也没有 Google 语音引擎时，这两个接口就是唯一能让手机开口/听写的办法；不填也能用单词发音（有道在线音）和录音回放。</p>
     </div>
 
     <div class="card">
@@ -454,6 +456,8 @@ let modelName = localStorage.getItem('modelName') || 'deepseek-chat';
 let asrUrl = localStorage.getItem('asrUrl') || '';
 let asrKey = localStorage.getItem('asrKey') || '';
 let asrModel = localStorage.getItem('asrModel') || 'FunAudioLLM/SenseVoiceSmall';
+let ttsModel = localStorage.getItem('ttsModel') || 'FunAudioLLM/CosyVoice2-0.5B';
+let ttsVoice = localStorage.getItem('ttsVoice') || 'anna';
 let lastText = '';
 let lastRecText = '';
 
@@ -596,6 +600,53 @@ function youdaoPlay(text, lang, rate, seq){
   });
 }
 
+/* 云端合成（OpenAI 兼容 /audio/speech，硅基流动 CosyVoice 等） */
+function playBlob(blob, seq){
+  return new Promise((resolve, reject)=>{
+    const url = URL.createObjectURL(blob);
+    const a = new Audio(url);
+    curAudio = a;
+    let settled = false;
+    const fin = (err)=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try{ URL.revokeObjectURL(url); }catch(e){}
+      err ? reject(err) : resolve();
+    };
+    const timer = setTimeout(()=>fin(new Error('音频播放超时')), 60000);
+    a.onended = ()=>fin();
+    a.onerror = ()=>fin(new Error('音频解码失败'));
+    const p = a.play();
+    if(p && typeof p.catch === 'function') p.catch(e=>fin(new Error('播放被拦截：' + e.message)));
+  });
+}
+
+async function cloudTTS(text, lang, rate, seq){
+  if(!asrKey || !asrUrl) throw new Error('未配置语音服务');
+  const url = asrUrl.replace(/\/audio\/transcriptions\/?$/, '/audio/speech');
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + asrKey },
+    body: JSON.stringify({
+      model: ttsModel || 'FunAudioLLM/CosyVoice2-0.5B',
+      input: text.slice(0, 400),
+      voice: ttsVoice || 'anna',
+      response_format: 'mp3',
+      speed: Math.min(2, Math.max(0.5, rate || 1))
+    })
+  });
+  if(!res.ok){
+    let d = '';
+    try{ d = (await res.text()).slice(0, 120); }catch(e){}
+    throw new Error('云端语音返回 ' + res.status + (d ? '：' + d : ''));
+  }
+  const blob = await res.blob();
+  if(!blob || !blob.size) throw new Error('云端语音没有返回音频');
+  if(seq !== speakSeq) throw new Error('已取消');
+  return playBlob(blob, seq);
+}
+
 /* 系统语音合成（安卓/iOS 自带 TTS 引擎） */
 function ssPlay(text, lang, rate, seq){
   return new Promise((resolve, reject)=>{
@@ -630,10 +681,17 @@ async function speakText(text, lang, opts){
   stopSpeaking();
   const seq = speakSeq;
   if(hasTTS()){ try{ window.speechSynthesis.getVoices(); }catch(e){} }
+  const hasCloud = !!(asrKey && asrUrl);
   try{
     if(text.length <= 40){
       try{ await youdaoPlay(text, lang, rate, seq); return true; }
-      catch(e){ toast('在线发音失败：' + e.message + '，改用系统语音…', true); }
+      catch(e){
+        if(!hasCloud) toast('在线发音失败：' + e.message + '，改用系统语音…', true);
+      }
+    }
+    if(hasCloud){
+      try{ await cloudTTS(text, lang, rate, seq); return true; }
+      catch(e){ toast('云端朗读失败：' + e.message + '，改用系统语音…', true); }
     }
     if(text.length > 120){
       const parts = text.match(/[^。！？.!?\n]{1,120}[。！？.!?\n]?/g) || [text];
@@ -875,6 +933,7 @@ async function voiceCheck(){
   lines.push('系统语音识别 SR：' + (hasSR() ? '支持' : '不支持（安卓 Chrome 本就没有）'));
   lines.push('麦克风 getUserMedia：' + (navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? '支持' : '不支持'));
   lines.push('云端识别接口：' + (asrKey && asrUrl ? '已配置' : '未配置'));
+  lines.push('云端朗读接口：' + (asrKey && asrUrl ? '已配置（' + ttsModel + '）' : '未配置'));
   lines.push('在线发音测试：检测中…');
   const out = $('voiceCheckOut');
   out.innerText = lines.join('\n');
@@ -1307,9 +1366,13 @@ function saveApi(){
   asrUrl = ($('asrUrl').value || '').trim();
   asrKey = ($('asrKey').value || '').trim();
   asrModel = ($('asrModel').value || '').trim() || 'FunAudioLLM/SenseVoiceSmall';
+  ttsModel = ($('ttsModel').value || '').trim() || 'FunAudioLLM/CosyVoice2-0.5B';
+  ttsVoice = ($('ttsVoice').value || '').trim() || 'anna';
   localStorage.setItem('asrUrl', asrUrl);
   localStorage.setItem('asrKey', asrKey);
   localStorage.setItem('asrModel', asrModel);
+  localStorage.setItem('ttsModel', ttsModel);
+  localStorage.setItem('ttsVoice', ttsVoice);
   btnAiEval.disabled = !apiKey;
   btnWordAi.disabled = !apiKey;
   btnCardAi.disabled = !apiKey;
@@ -1436,6 +1499,8 @@ window.onload = ()=>{
   $('asrUrl').value = asrUrl;
   $('asrKey').value = asrKey;
   $('asrModel').value = asrModel;
+  $('ttsModel').value = ttsModel;
+  $('ttsVoice').value = ttsVoice;
   btnAiEval.disabled = !apiKey;
   btnWordAi.disabled = !apiKey;
   btnCardAi.disabled = !apiKey;
