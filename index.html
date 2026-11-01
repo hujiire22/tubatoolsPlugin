@@ -1011,9 +1011,9 @@ function showDictWord(){
   }
   $('dictIdx').innerText = dictIdx + 1;
   $('dictTotal').innerText = words.length;
-  // 从单词释义里提取中文部分，如果没有就显示单词本身让用户背拼写
   const w = words[dictIdx];
-  $('dictMean').innerText = w.mean ? w.mean : ("📝 默写拼写：" + w.en.split('').map(()=>'_').join(' '));
+  // words 是字符串数组，直接显示单词长度提示
+  $('dictMean').innerText = "📝 默写英文单词（" + w.length + "个字母）";
   $('dictInput').value = "";
   $('dictRes').innerText = "";
 }
@@ -1021,12 +1021,12 @@ function nextDict(){ dictIdx++; showDictWord(); }
 function checkDict(){
   if(dictIdx >= words.length) return;
   const ans = $('dictInput').value.trim().toLowerCase();
-  const real = words[dictIdx].en.toLowerCase();
-  $('dictRes').innerText = ans === real ? "✅ 正确！" : "❌ 错误，正确：" + words[dictIdx].en;
+  const real = words[dictIdx].toLowerCase();
+  $('dictRes').innerText = ans === real ? "✅ 正确！" : "❌ 错误，正确：" + words[dictIdx];
 }
 function showDictAns(){
   if(dictIdx >= words.length) return;
-  $('dictRes').innerText = "答案：" + words[dictIdx].en + (words[dictIdx].mean ? "（" + words[dictIdx].mean + "）" : "");
+  $('dictRes').innerText = "答案：" + words[dictIdx];
 }
 
 /* ================= 语法学习 ================= */
