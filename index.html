@@ -145,7 +145,7 @@ button.bad{background:var(--danger)}
   <header class="app-header">
     <div class="logo">
       <div class="logo-badge">C4</div>
-      <h1>四六级口语单词助手</h1>
+      <h1>四六级口语单词助手 <small style="font-size:11px;color:var(--muted);font-weight:400">v2.0</small></h1>
     </div>
     <button class="icon-btn" onclick="toggleDark()" title="深色模式">🌓</button>
   </header>
@@ -869,21 +869,13 @@ function showWord(){
 }
 function speakWord(){
   if(wordIdx >= words.length) return;
-  speechSynthesis.cancel();
-  // 安卓语音引擎异步加载，先等 voices 就绪
-  const loadVoices = new Promise(resolve => {
-    let v = speechSynthesis.getVoices();
-    if(v.length) return resolve(v);
-    speechSynthesis.onvoiceschanged = () => resolve(speechSynthesis.getVoices());
-    setTimeout(()=>resolve(speechSynthesis.getVoices()), 500);
-  });
-  loadVoices.then(voices=>{
+  // 用有道在线 TTS，不需要手机装语音引擎
+  const audio = new Audio("https://dict.youdao.com/dictvoice?audio=" + encodeURIComponent(words[wordIdx]) + "&type=2");
+  audio.play().catch(()=>{
+    // 在线播放失败再 fallback 到本地 speechSynthesis
+    speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(words[wordIdx]);
-    u.lang = 'en-US';
-    u.rate = 0.85;
-    u.pitch = 1;
-    const enVoice = voices.find(v => v.lang.startsWith('en'));
-    if(enVoice) u.voice = enVoice;
+    u.lang = 'en-US'; u.rate = 0.85;
     speechSynthesis.speak(u);
   });
 }
