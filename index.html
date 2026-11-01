@@ -250,9 +250,13 @@ button.bad{background:var(--danger)}
         </div>
         <input id="wordInput" placeholder="输入单词答案" style="margin-top:12px">
         <div class="row" style="margin-top:10px">
+          <button class="sec" onclick="prevWord()">← 上一个</button>
           <button class="ok" onclick="checkWord()">核对</button>
-          <button class="sec" onclick="nextWord()">下一个</button>
+          <button class="sec" onclick="nextWord()">下一个 →</button>
+        </div>
+        <div class="row" style="margin-top:6px">
           <button id="btnWordAi" onclick="aiExplainWord()" disabled>AI详解</button>
+          <button class="sec" onclick="saveProgress()">💾 保存进度</button>
         </div>
         <div class="out-box" id="wordRes" style="margin-top:10px;min-height:44px"></div>
       </div>
@@ -269,9 +273,10 @@ button.bad{background:var(--danger)}
         </div>
         <input id="dictInput" placeholder="凭记忆写出英文单词" style="margin-top:12px">
         <div class="row" style="margin-top:10px">
+          <button class="sec" onclick="prevDict()">← 上一个</button>
           <button class="ok" onclick="checkDict()">核对</button>
-          <button class="sec" onclick="nextDict()">下一个</button>
-          <button class="sec" onclick="showDictAns()">💡 看答案</button>
+          <button class="sec" onclick="nextDict()">下一个 →</button>
+          <button class="sec" onclick="showDictAns()">💡 答案</button>
         </div>
         <div class="out-box" id="dictRes" style="margin-top:10px;min-height:44px"></div>
       </div>
@@ -1027,6 +1032,30 @@ function showDictAns(){
   if(dictIdx >= words.length) return;
   $('dictRes').innerText = "答案：" + words[dictIdx];
 }
+function prevDict(){ if(dictIdx > 0){ dictIdx--; showDictWord(); } }
+function prevWord(){ if(wordIdx > 0){ wordIdx--; nextWord(); } }
+
+/* ================= 进度保存 ================= */
+function saveProgress(){
+  try{
+    localStorage.setItem('cet_words', JSON.stringify(words));
+    localStorage.setItem('cet_wordIdx', wordIdx);
+    localStorage.setItem('cet_dictIdx', dictIdx);
+    alert("✅ 进度已保存！下次打开自动继续。");
+  }catch(e){ alert("保存失败: " + e); }
+}
+function loadProgress(){
+  try{
+    const w = localStorage.getItem('cet_words');
+    const idx = localStorage.getItem('cet_wordIdx');
+    if(w && words.length === 0){
+      words = JSON.parse(w);
+      if(idx){ wordIdx = parseInt(idx); }
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
 
 /* ================= 语法学习 ================= */
 const grammarData = [
@@ -1081,6 +1110,12 @@ window.onload = ()=>{
   btnAiEval.disabled = !apiKey;
   btnWordAi.disabled = !apiKey;
   btnCardAi.disabled = !apiKey;
+  // 自动恢复上次进度
+  if(loadProgress()){
+    if(words.length){
+      alert("📂 已恢复上次学习进度：第 " + (wordIdx+1) + " / " + words.length + " 词");
+    }
+  }
 };
 </script>
 </body>
