@@ -869,14 +869,13 @@ function showWord(){
 }
 function speakWord(){
   if(wordIdx >= words.length) return;
-  // 用有道在线 TTS，不需要手机装语音引擎
-  const audio = new Audio("https://dict.youdao.com/dictvoice?audio=" + encodeURIComponent(words[wordIdx]) + "&type=2");
+  const w = encodeURIComponent(words[wordIdx]);
+  // 双保险：先试 Google 翻译 TTS，失败再试有道
+  const audio = new Audio();
+  audio.src = "https://translate.google.com/translate_tts?ie=UTF-8&q=" + w + "&tl=en&client=tw-ob";
   audio.play().catch(()=>{
-    // 在线播放失败再 fallback 到本地 speechSynthesis
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(words[wordIdx]);
-    u.lang = 'en-US'; u.rate = 0.85;
-    speechSynthesis.speak(u);
+    audio.src = "https://dict.youdao.com/dictvoice?audio=" + w + "&type=1";
+    audio.play();
   });
 }
 function checkWord(){
@@ -1031,23 +1030,44 @@ function showDictAns(){
 
 /* ================= 语法学习 ================= */
 const grammarData = [
-  {t:"时态：现在完成时",d:"have/has + 过去分词，表示过去发生但对现在有影响。例：I have studied English for 3 years."},
-  {t:"时态：过去进行时",d:"was/were + doing，表示过去某时刻正在做。例：I was reading at 8 last night."},
-  {t:"从句：宾语从句",d:"动词后接 that/if/whether 引导的从句。例：I think (that) you are right."},
-  {t:"从句：定语从句",d:"修饰名词，用 who/which/that。例：The girl who is standing there is my sister."},
-  {t:"非谓语：动词不定式",d:"to do 表目的/将来。例：I come here to learn English."},
-  {t:"非谓语：动名词",d:"doing 作主语/宾语。例：Swimming is good for health."},
-  {t:"虚拟语气",d:"与事实相反的假设。例：If I were you, I would study hard."},
-  {t:"被动语态",d:"be + 过去分词。例：The book was written by Lu Xun."},
-  {t:"情态动词",d:"must/might/can't 表推测。例：He must be at home."},
-  {t:"比较级最高级",d:"er/est 或 more/most。例：She is taller than me, the tallest in class."}
+  // 零基础入门
+  {cat:"零基础入门",t:"什么是名词",d:"表示人/事/物的名字。例：book（书）、apple（苹果）、teacher（老师）。",ex:"I have a book. 我有一本书。"},
+  {cat:"零基础入门",t:"什么是动词",d:"表示动作或状态。例：run（跑）、eat（吃）、is（是）。",ex:"She runs every day. 她每天跑步。"},
+  {cat:"零基础入门",t:"什么是形容词",d:"用来修饰名词，说明'什么样'。例：red（红的）、big（大的）、happy（开心的）。",ex:"The red apple is sweet. 这个红苹果很甜。"},
+  {cat:"零基础入门",t:"什么是副词",d:"修饰动词/形容词，表示'怎么/多么'。例：quickly（快地）、very（非常）。",ex:"He runs very quickly. 他跑得非常快。"},
+  {cat:"零基础入门",t:"什么是介词",d:"表示名词和其他词的关系（时间/地点/方向）。例：in（在…里）、on（在…上）、at（在…点）、to（到）、for（为了）。",ex:"The book is on the desk. 书在桌子上。"},
+  {cat:"零基础入门",t:"什么是代词",d:"代替名词，避免重复。例：I（我）、you（你）、he（他）、she（她）、it（它）、they（他们）。",ex:"I like her. She is nice. 我喜欢她。她很好。"},
+  // 基本句型
+  {cat:"基本句型",t:"主语+谓语（S+V）",d:"最基本句型：谁 + 做什么。",ex:"Birds fly. 鸟飞。 / I study. 我学习。"},
+  {cat:"基本句型",t:"主语+谓语+宾语（S+V+O）",d:"谁 + 做 + 什么。宾语是动作的对象。",ex:"I like English. 我喜欢英语。 / She reads books. 她读书。"},
+  {cat:"基本句型",t:"主语+系动词+表语（S+V+P）",d:"谁 + 是 + 什么。系动词如 be(am/is/are)、look、feel。",ex:"I am a student. 我是学生。 / She is beautiful. 她很漂亮。"},
+  {cat:"基本句型",t:"主语+谓语+间接宾语+直接宾语（S+V+IO+DO）",d:"谁 + 给/教 + 谁 + 什么。",ex:"He gave me a book. 他给了我一本书。"},
+  // 时态
+  {cat:"核心时态",t:"一般现在时",d:"经常做的事 / 客观事实。动词用原形，第三人称单数加s。",ex:"I go to school every day. 我每天上学。 / He likes apples. 他喜欢苹果。"},
+  {cat:"核心时态",t:"一般过去时",d:"过去做的事。动词加ed（不规则要背）。",ex:"I went to park yesterday. 我昨天去了公园。"},
+  {cat:"核心时态",t:"一般将来时",d:"将要做的事。用 will + 动词原形 或 be going to。",ex:"I will study tomorrow. 我明天要学习。"},
+  {cat:"核心时态",t:"现在进行时",d:"正在做的事。be(am/is/are) + doing。",ex:"I am reading now. 我正在读书。"},
+  {cat:"核心时态",t:"现在完成时",d:"过去做的事对现在有影响。have/has + 过去分词。",ex:"I have studied English for 3 years. 我学英语3年了。"},
+  // 从句
+  {cat:"从句入门",t:"宾语从句",d:"动词后面加一个句子当宾语。用 that/if/whether 引导。",ex:"I think (that) you are right. 我认为你是对的。"},
+  {cat:"从句入门",t:"定语从句",d:"修饰前面的名词。用 who（人）/which（物）/that 引导。",ex:"The girl who is there is my sister. 在那儿的女孩是我姐姐。"},
+  // 常考点
+  {cat:"四级常考",t:"被动语态",d:"主语是动作的承受者。be + 过去分词。",ex:"The book was written by Lu Xun. 这本书是鲁迅写的。"},
+  {cat:"四级常考",t:"情态动词表推测",d:"must（肯定）/ might（可能）/ can't（不可能）。",ex:"He must be at home. 他肯定在家。 / He can't be at home. 他不可能在家。"},
+  {cat:"四级常考",t:"比较级最高级",d:"短词加er/est，长词加more/most。",ex:"She is taller than me. 她比我高。 / She is the tallest. 她最高。"}
 ];
 function renderGrammar(){
   let html = "";
+  let lastCat = "";
   grammarData.forEach((g,i)=>{
+    if(g.cat !== lastCat){
+      html += `<div style="margin:16px 0 8px;padding:6px 10px;background:var(--primary);color:#fff;border-radius:8px;font-size:13px;font-weight:700">📌 ${g.cat}</div>`;
+      lastCat = g.cat;
+    }
     html += `<div style="padding:12px;border-bottom:1px solid var(--gray)">
-      <b style="color:var(--primary)">${i+1}. ${g.t}</b>
-      <p style="margin-top:6px;font-size:14px;line-height:1.6">${g.d}</p>
+      <b style="color:var(--primary);font-size:15px">${g.t}</b>
+      <p style="margin:6px 0;font-size:14px;line-height:1.6">${g.d}</p>
+      <p style="margin:6px 0;padding:8px;background:var(--bg);border-radius:8px;font-size:14px;color:var(--ok)">💡 ${g.ex}</p>
     </div>`;
   });
   $('grammarList').innerHTML = html;
