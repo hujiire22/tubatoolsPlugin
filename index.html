@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>四六级口语单词助手 v4.1</title>
+<title>四六级口语单词助手 v5.0</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%233671e9'/%3E%3Cpath d='M30,25 L70,25 L70,75 L30,75 Z' fill='none' stroke='white' stroke-width='6'/%3E%3Cpath d='M40,40 L60,40 L60,60 L40,60 Z' fill='white'/%3E%3Cpath d='M75,35 Q85,45 75,55' stroke='white' stroke-width='5' fill='none'/%3E%3C/svg%3E">
 <meta name="theme-color" content="#3671e9">
 <style>
@@ -143,6 +143,14 @@ button.bad{background:var(--danger)}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(28,33,53,.92);color:#fff;font-size:13.5px;padding:10px 14px;border-radius:12px;max-width:90%;z-index:9999;opacity:0;transition:.25s;line-height:1.5;pointer-events:none}
 .toast.err{background:rgba(200,40,70,.95)}
 .env-tip{background:#fff7e6;border:1px solid #ffd591;color:#ad6800;font-size:12.5px;line-height:1.6;padding:8px 12px;border-radius:12px;margin-bottom:12px}
+.tabbar button{font-size:10.5px;padding:4px 0}
+.tabbar button .ic{font-size:18px}
+.q-opt{padding:10px 12px;border:1px solid var(--gray);border-radius:10px;margin:6px 0;font-size:14px;line-height:1.6;background:var(--bg)}
+.q-opt:active{opacity:.8}
+.q-right{background:rgba(34,197,94,.15)!important;border-color:var(--ok)!important;color:var(--ok)!important}
+.q-wrong{background:rgba(255,77,106,.15)!important;border-color:var(--danger)!important;color:var(--danger)!important}
+.q-exp{margin-top:4px;padding:8px 10px;background:var(--bg);border-radius:10px;font-size:13px;line-height:1.6;color:var(--muted)}
+.quiz-item .t{font-weight:700;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -153,7 +161,7 @@ button.bad{background:var(--danger)}
   <header class="app-header">
     <div class="logo">
       <div class="logo-badge">C4</div>
-      <h1>四六级口语单词助手 <small style="font-size:11px;color:var(--muted);font-weight:400">v4.1</small></h1>
+      <h1>四六级口语单词助手 <small style="font-size:11px;color:var(--muted);font-weight:400">v5.0</small></h1>
     </div>
     <button class="icon-btn" onclick="toggleDark()" title="深色模式">🌓</button>
   </header>
@@ -235,6 +243,7 @@ button.bad{background:var(--danger)}
           </div>
         </div>
       </div>
+      <button class="btn sec" id="btnWrong" onclick="openWrong()" style="padding:10px;margin-bottom:10px">📒 生词本(0)</button>
       <div class="assess-row">
         <button class="ok" onclick="selfAssess('know')"><span class="a-ic">😀</span>认识</button>
         <button class="warn" onclick="selfAssess('fuzzy')"><span class="a-ic">😕</span>模糊</button>
@@ -316,6 +325,7 @@ button.bad{background:var(--danger)}
         <option value="essay">📝 写作范文</option>
         <option value="listen">🎧 听力原文</option>
         <option value="trans">🀄 翻译话题</option>
+        <option value="quiz">📝 单选练习</option>
       </select>
       <button class="btn" onclick="loadCet4Item()" style="margin-top:10px">加载素材</button>
     </div>
@@ -342,6 +352,29 @@ button.bad{background:var(--danger)}
     </div>
   </div>
 
+  <!-- ========== 作文 ========== -->
+  <div id="panel-essay" style="display:none">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>四级作文模板（8 类）</div>
+      <p class="tip">先看懂中文思路，再背英文模板句。点标题展开。</p>
+      <div id="essayTemplates"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>万能句式</div>
+      <p class="tip">开头/正文/结尾各挑 2-3 句背熟，考场上直接套。</p>
+      <div id="essayPhrases"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>高分替换词</div>
+      <p class="tip">把低级词换成高级词，写作立刻提档。</p>
+      <div id="essayUpgrade"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>范文背诵</div>
+      <div id="essaySamples"></div>
+    </div>
+  </div>
+
   <!-- ========== 语法学习 ========== -->
   <div id="panel-grammar" style="display:none">
     <div class="card">
@@ -352,6 +385,14 @@ button.bad{background:var(--danger)}
 
   <!-- ========== 设置 ========== -->
   <div id="panel-setting" style="display:none">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>学习统计</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="num" id="statStreak">0</div><div class="lbl">连续打卡(天)</div></div>
+        <div class="stat-box"><div class="num" id="statTotal">0</div><div class="lbl">累计打卡(天)</div></div>
+        <div class="stat-box"><div class="num" id="statToday">0</div><div class="lbl">今日学习(词)</div></div>
+      </div>
+    </div>
     <div class="card">
       <div class="card-title"><span class="dot"></span>AI 接口设置</div>
       <div class="set-badge">✅ 不填 API 也能用全部离线功能</div>
@@ -392,10 +433,23 @@ button.bad{background:var(--danger)}
     <button class="active" data-tab="speech" onclick="switchTab('speech')"><span class="ic">🎙️</span>口播</button>
     <button data-tab="word" onclick="switchTab('word')"><span class="ic">📖</span>单词</button>
     <button data-tab="cet4" onclick="switchTab('cet4')"><span class="ic">📚</span>题库</button>
+    <button data-tab="essay" onclick="switchTab('essay')"><span class="ic">✍️</span>作文</button>
     <button data-tab="grammar" onclick="switchTab('grammar')"><span class="ic">📝</span>语法</button>
     <button data-tab="chat" onclick="switchTab('chat')"><span class="ic">💬</span>AI</button>
     <button data-tab="setting" onclick="switchTab('setting')"><span class="ic">⚙️</span>设置</button>
   </nav>
+</div>
+
+<!-- 生词本弹窗 -->
+<div id="wrongModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;justify-content:center;align-items:center;padding:20px" onclick="if(event.target===this)closeWrong()">
+  <div style="background:var(--card);border-radius:16px;max-width:420px;width:100%;max-height:82vh;display:flex;flex-direction:column">
+    <div style="padding:14px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gray)"><span>📒 生词本（认识/模糊不会进，只有标了「生词」的进来）</span></div>
+    <div id="wrongList" style="overflow:auto;padding:4px 16px;flex:1;min-height:120px"></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--gray);display:flex;gap:8px">
+      <button class="btn sec" onclick="clearWrong()" style="padding:10px">清空生词本</button>
+      <button class="btn ok" onclick="closeWrong()" style="padding:10px">返回学习</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -413,34 +467,437 @@ const cet4Data = {
   trans:[
     {title:"中国茶文化",content:"中国是茶的故乡。中国人饮茶已有几千年历史。茶是中国最重要的饮品之一。喝茶有助于放松身心。中国有很多名茶，例如绿茶、红茶。茶文化也传播到世界各地。"},
     {title:"春节传统",content:"春节是中国最重要的传统节日。每到春节，家人团聚，一起吃年夜饭。人们贴春联、放烟花、拜年。孩子们可以收到红包。春节象征着团圆与新的开始。"},
-    {title:"共享单车",content:"共享单车在中国城市很流行。它方便短途出行，绿色环保。骑车可以锻炼身体，缓解交通压力。越来越多年轻人喜欢骑共享单车上下班。"}
+    {title:"共享单车",content:"共享单车在中国城市很流行。它方便短途出行，绿色环保。骑车可以锻炼身体，缓解交通压力。越来越多年轻人喜欢骑共享单车上下班。"},
+    {title:"中国高铁",content:"中国高铁发展迅速，已成为世界第一。高铁速度快、准点率高，极大方便了人们出行。越来越多的人选择高铁出行，因为它安全、舒适又环保。"},
+    {title:"节约粮食",content:"节约粮食是中华民族的传统美德。每一粒粮食都来之不易。我们应该按需点餐，不浪费食物。光盘行动受到越来越多人的支持。"}
+  ],
+  quiz:[
+    {q:"The new method is more ______ than the old one; it saves half the time.",opts:["efficient","sufficient","frequent","ancient"],ans:0,exp:"efficient 高效的；sufficient 足够的；frequent 频繁的；ancient 古代的。句意：新方法更高效。"},
+    {q:"Don't ______ the chance to practice English with native speakers.",opts:["ignore","miss","waste","avoid"],ans:1,exp:"miss the chance 错过机会（固定搭配）。"},
+    {q:"We should take ______ to protect the environment.",opts:["steps","measures","actions","ways"],ans:1,exp:"take measures to do sth 采取措施做某事（固定搭配）。"},
+    {q:"The Internet has a great ______ on our daily life.",opts:["influence","affect","effect","impression"],ans:0,exp:"have an influence on 对…有影响；effect 作名词常与 have an effect on 搭配，此处语法上也可，但 influence 更稳妥。"},
+    {q:"It is ______ that everyone should protect the earth.",opts:["obvious","curious","previous","serious"],ans:0,exp:"obvious 明显的；curious 好奇的；previous 先前的；serious 严肃的。"},
+    {q:"She is ______ to succeed because she works hard every day.",opts:["decided","determined","deciding","determining"],ans:1,exp:"be determined to do sth 下定决心做某事。"},
+    {q:"______ the rain, the sports meeting was held as planned.",opts:["Although","Despite","Because","Since"],ans:1,exp:"despite=in spite of 尽管，后接名词短语。"},
+    {q:"Hard work ______ to success.",opts:["contributes","distributes","attributes","tributes"],ans:0,exp:"contribute to 有助于、促成（固定搭配）。"},
+    {q:"You should ______ the dictionary when you meet new words.",opts:["refer to","look up","search for","find out"],ans:0,exp:"refer to 查阅（词典）；look up 查词时宾语是词本身。"},
+    {q:"The teacher asked us to ______ our ideas clearly in the essay.",opts:["express","impress","suppress","oppress"],ans:0,exp:"express one's ideas 表达想法。"},
+    {q:"Don't put ______ what you can do today until tomorrow.",opts:["off","away","up","down"],ans:0,exp:"put off 推迟（固定短语）。"},
+    {q:"He ______ to be a doctor after graduation.",opts:["intends","tends","attends","extends"],ans:0,exp:"intend to do 打算做；tend to do 倾向于做（习惯性）。"},
+    {q:"The accident ______ at the crossroads yesterday morning.",opts:["occurred","happened to","took place to","occurring"],ans:0,exp:"occur= happen 发生，瞬间动词，与时间点连用。"},
+    {q:"Reading a good book can ______ your knowledge.",opts:["expand","extend","expend","explain"],ans:0,exp:"expand knowledge 拓展知识；extend 延伸（时间/空间）；expend 花费。"},
+    {q:"We should ______ the old buildings in the city.",opts:["preserve","reserve","observe","deserve"],ans:0,exp:"preserve 保护、保存（古建筑）；reserve 预订、保留（座位）。"},
+    {q:"______, online learning has both advantages and disadvantages.",opts:["To conclude","In conclusion","Concluding","Conclusion"],ans:0,exp:"in conclusion/to conclude 总而言之（固定搭配）。"},
+    {q:"The more you practice, the ______ your spoken English will be.",opts:["good","better","best","well"],ans:1,exp:"the + 比较级, the + 比较级：越…越…。"},
+    {q:"She gave me a lot of ______ on how to learn English well.",opts:["advice","advices","suggestion","tip"],ans:0,exp:"advice 不可数名词，无复数形式。"},
+    {q:"If I ______ you, I would review the words every day.",opts:["am","were","be","was"],ans:1,exp:"虚拟语气：与现在事实相反，从句用 were。"},
+    {q:"Neither of the two answers ______ correct.",opts:["are","is","were","have been"],ans:1,exp:"neither of + 复数名词作主语，谓语用单数。"},
+    {q:"The book ______ yesterday is very interesting.",opts:["borrowed","that borrowed","borrowing","was borrowed"],ans:0,exp:"过去分词作后置定语，表被动：the book borrowed yesterday。"},
+    {q:"You had better ______ up late before the exam.",opts:["not stay","not to stay","don't stay","no stay"],ans:0,exp:"had better do / had better not do 最好（不）做。"},
+    {q:"It took us two hours ______ to the station.",opts:["to walk","walking","walked","walk"],ans:0,exp:"It takes sb some time to do sth 花时间做某事。"},
+    {q:"China is rich ______ natural resources.",opts:["in","with","of","for"],ans:0,exp:"be rich in 富含（固定搭配）。"},
+    {q:"The little boy is ______ of the dark.",opts:["afraid","fear","frightened to","scary"],ans:0,exp:"be afraid of sth 害怕某事。"},
+    {q:"We should stop ______ the same mistake.",opts:["to make","making","made","make"],ans:1,exp:"stop doing 停止做某事；stop to do 停下来去做另一件事。"},
+    {q:"English is ______ useful tool for communication.",opts:["a","an","the","/"],ans:0,exp:"useful 以辅音音素开头，用 a。"},
+    {q:"He speaks English ______ than anyone else in our class.",opts:["fluently","more fluently","most fluently","fluent"],ans:1,exp:"than 提示用比较级 more fluently。"},
+    {q:"______ his help, we finished the task on time.",opts:["Thanks to","Thank to","Because","Owing"],ans:0,exp:"thanks to 幸亏、由于（固定搭配）。"},
+    {q:"I look forward to ______ from you soon.",opts:["hear","hearing","heard","hears"],ans:1,exp:"look forward to 中 to 是介词，后接动名词。"}
   ]
 };
 
 /* 内置词库：单词 → 音标 / 词性 / 释义 / 例句 */
 const wordBank = {
   "opportunity":{ipa:"/ˌɒpəˈtjuːnəti/",pos:"n.",mean:"机会；时机",ex:"This is a great opportunity to learn."},
-  "convenient":{ipa:"/kənˈviːniənt/",pos:"adj.",mean:"方便的；便利的",ex:"Online shopping is very convenient."},
   "discipline":{ipa:"/ˈdɪsəplɪn/",pos:"n.",mean:"自律；纪律",ex:"Learning requires self-discipline."},
   "benefit":{ipa:"/ˈbenɪfɪt/",pos:"n. / v.",mean:"好处；受益",ex:"Exercise brings many benefits."},
-  "available":{ipa:"/əˈveɪləbl/",pos:"adj.",mean:"可获得的；有空的",ex:"The book is available online."},
   "effective":{ipa:"/ɪˈfektɪv/",pos:"adj.",mean:"有效的",ex:"This is an effective way to study."},
   "traditional":{ipa:"/trəˈdɪʃənl/",pos:"adj.",mean:"传统的",ex:"Spring Festival is a traditional holiday."},
-  "culture":{ipa:"/ˈkʌltʃə(r)/",pos:"n.",mean:"文化",ex:"China has a rich culture."},
   "atmosphere":{ipa:"/ˈætməsfɪə(r)/",pos:"n.",mean:"气氛；氛围",ex:"The classroom has a good learning atmosphere."},
-  "economy":{ipa:"/ɪˈkɒnəmi/",pos:"n.",mean:"经济",ex:"The economy is developing fast."},
   "phenomenon":{ipa:"/fəˈnɒmɪnən/",pos:"n.",mean:"现象",ex:"It is a common phenomenon in cities."},
-  "responsibility":{ipa:"/rɪˌspɒnsəˈbɪləti/",pos:"n.",mean:"责任；职责",ex:"We should take responsibility for our study."},
-  "attitude":{ipa:"/ˈætɪtjuːd/",pos:"n.",mean:"态度",ex:"A positive attitude matters a lot."},
   "concentrate":{ipa:"/ˈkɒnsntreɪt/",pos:"v.",mean:"集中（注意力）",ex:"Try to concentrate on your work."},
-  "circumstance":{ipa:"/ˈsɜːkəmstəns/",pos:"n.",mean:"环境；情况",ex:"Under no circumstance give up."},
   "decorate":{ipa:"/ˈdekəreɪt/",pos:"v.",mean:"装饰；布置",ex:"We decorate the room for the festival."},
   "demonstrate":{ipa:"/ˈdemənstreɪt/",pos:"v.",mean:"演示；证明",ex:"Let me demonstrate how it works."},
   "efficient":{ipa:"/ɪˈfɪʃnt/",pos:"adj.",mean:"高效的",ex:"This method is more efficient."},
   "flexible":{ipa:"/ˈfleksəbl/",pos:"adj.",mean:"灵活的",ex:"My schedule is quite flexible."},
-  "generate":{ipa:"/ˈdʒenəreɪt/",pos:"v.",mean:"产生；生成",ex:"Wind can generate electricity."}
-};
-const cet4WordList = "opportunity convenient discipline benefit available effective traditional culture atmosphere economy phenomenon responsibility attitude concentrate circumstance decorate demonstrate efficient flexible generate";
+  "ability":{ipa:"/əˈbɪləti/",pos:"n.",mean:"能力",ex:"She has the ability to solve problems."},
+  "abroad":{ipa:"/əˈbrɔːd/",pos:"adv.",mean:"在国外",ex:"He wants to study abroad."},
+  "absorb":{ipa:"/əbˈzɔːb/",pos:"v.",mean:"吸收；使专注",ex:"Plants absorb water from the soil."},
+  "academic":{ipa:"/ˌækəˈdemɪk/",pos:"adj.",mean:"学术的",ex:"Academic performance matters."},
+  "access":{ipa:"/ˈækses/",pos:"n./v.",mean:"通道；访问",ex:"Students have access to the library."},
+  "accompany":{ipa:"/əˈkʌmpəni/",pos:"v.",mean:"陪伴；伴随",ex:"Parents should accompany their kids."},
+  "achieve":{ipa:"/əˈtʃiːv/",pos:"v.",mean:"实现；取得",ex:"Hard work helps you achieve goals."},
+  "acquire":{ipa:"/əˈkwaɪə(r)/",pos:"v.",mean:"获得",ex:"We acquire knowledge at school."},
+  "adapt":{ipa:"/əˈdæpt/",pos:"v.",mean:"适应；改编",ex:"New students need time to adapt."},
+  "adequate":{ipa:"/ˈædɪkwət/",pos:"adj.",mean:"足够的",ex:"Get adequate sleep before exams."},
+  "adjust":{ipa:"/əˈdʒʌst/",pos:"v.",mean:"调整",ex:"Adjust your study plan if needed."},
+  "admit":{ipa:"/ədˈmɪt/",pos:"v.",mean:"承认；准许进入",ex:"He admitted his mistake."},
+  "adopt":{ipa:"/əˈdɒpt/",pos:"v.",mean:"采用；收养",ex:"We should adopt a healthy lifestyle."},
+  "advantage":{ipa:"/ədˈvɑːntɪdʒ/",pos:"n.",mean:"优势",ex:"Every coin has two sides."},
+  "advertise":{ipa:"/ˈædvətaɪz/",pos:"v.",mean:"做广告",ex:"Companies advertise their products."},
+  "affect":{ipa:"/əˈfekt/",pos:"v.",mean:"影响",ex:"Internet affects our daily life."},
+  "afford":{ipa:"/əˈfɔːd/",pos:"v.",mean:"负担得起",ex:"I can't afford a new phone."},
+  "agreement":{ipa:"/əˈɡriːmənt/",pos:"n.",mean:"协议；同意",ex:"They reached an agreement."},
+  "aim":{ipa:"/eɪm/",pos:"n./v.",mean:"目标；瞄准",ex:"My aim is to pass CET-4."},
+  "allow":{ipa:"/əˈlaʊ/",pos:"v.",mean:"允许",ex:"Smoking is not allowed here."},
+  "ambition":{ipa:"/æmˈbɪʃn/",pos:"n.",mean:"雄心；抱负",ex:"He is full of ambition."},
+  "amount":{ipa:"/əˈmaʊnt/",pos:"n.",mean:"数量",ex:"A large amount of money was spent."},
+  "ancient":{ipa:"/ˈeɪnʃənt/",pos:"adj.",mean:"古代的",ex:"China has an ancient civilization."},
+  "announce":{ipa:"/əˈnaʊns/",pos:"v.",mean:"宣布",ex:"The teacher announced the result."},
+  "anxious":{ipa:"/ˈæŋkʃəs/",pos:"adj.",mean:"焦虑的",ex:"Don't be anxious about the exam."},
+  "apologize":{ipa:"/əˈpɒlədʒaɪz/",pos:"v.",mean:"道歉",ex:"You should apologize to her."},
+  "appreciate":{ipa:"/əˈpriːʃieɪt/",pos:"v.",mean:"感激；欣赏",ex:"I really appreciate your help."},
+  "approach":{ipa:"/əˈprəʊtʃ/",pos:"n./v.",mean:"方法；接近",ex:"Try a different approach."},
+  "appropriate":{ipa:"/əˈprəʊpriət/",pos:"adj.",mean:"合适的",ex:"Choose appropriate words."},
+  "argue":{ipa:"/ˈɑːɡjuː/",pos:"v.",mean:"争论；主张",ex:"Don't argue with the teacher."},
+  "arrange":{ipa:"/əˈreɪndʒ/",pos:"v.",mean:"安排",ex:"I will arrange the meeting."},
+  "attract":{ipa:"/əˈtrækt/",pos:"v.",mean:"吸引",ex:"The city attracts many tourists."},
+  "available":{ipa:"/əˈveɪləbl/",pos:"adj.",mean:"可获得的；有空的",ex:"Are you available this weekend?"},
+  "average":{ipa:"/ˈævərɪdʒ/",pos:"n./adj.",mean:"平均（的）",ex:"The average score is 80."},
+  "avoid":{ipa:"/əˈvɔɪd/",pos:"v.",mean:"避免",ex:"Avoid staying up too late."},
+  "balance":{ipa:"/ˈbæləns/",pos:"n./v.",mean:"平衡",ex:"Keep a balance between work and rest."},
+  "behavior":{ipa:"/bɪˈheɪvjə(r)/",pos:"n.",mean:"行为",ex:"Good behavior is important."},
+  "belong":{ipa:"/bɪˈlɒŋ/",pos:"v.",mean:"属于",ex:"This book belongs to me."},
+  "beyond":{ipa:"/bɪˈjɒnd/",pos:"prep.",mean:"超出；在…那边",ex:"The task is beyond my ability."},
+  "burst":{ipa:"/bɜːst/",pos:"v.",mean:"爆发；突然出现",ex:"The crowd burst into laughter."},
+  "calculate":{ipa:"/ˈkælkjuleɪt/",pos:"v.",mean:"计算",ex:"Calculate the total cost first."},
+  "campaign":{ipa:"/kæmˈpeɪn/",pos:"n.",mean:"运动；活动",ex:"A campaign to protect the environment."},
+  "candidate":{ipa:"/ˈkændɪdət/",pos:"n.",mean:"候选人",ex:"He is a strong candidate."},
+  "capable":{ipa:"/ˈkeɪpəbl/",pos:"adj.",mean:"有能力的",ex:"She is capable of doing it."},
+  "career":{ipa:"/kəˈrɪə(r)/",pos:"n.",mean:"职业；生涯",ex:"Choose a career you love."},
+  "cautious":{ipa:"/ˈkɔːʃəs/",pos:"adj.",mean:"谨慎的",ex:"Be cautious when you drive."},
+  "challenge":{ipa:"/ˈtʃælɪndʒ/",pos:"n./v.",mean:"挑战",ex:"Face the challenge bravely."},
+  "character":{ipa:"/ˈkærəktə(r)/",pos:"n.",mean:"性格；角色",ex:"She has a strong character."},
+  "circumstance":{ipa:"/ˈsɜːkəmstəns/",pos:"n.",mean:"环境；情况",ex:"Under no circumstance give up."},
+  "claim":{ipa:"/kleɪm/",pos:"v./n.",mean:"声称；索取",ex:"He claimed that he was right."},
+  "comment":{ipa:"/ˈkɒment/",pos:"n./v.",mean:"评论",ex:"No comment on that question."},
+  "commit":{ipa:"/kəˈmɪt/",pos:"v.",mean:"犯（错）；致力于",ex:"Commit yourself to your goal."},
+  "communicate":{ipa:"/kəˈmjuːnɪkeɪt/",pos:"v.",mean:"交流",ex:"We communicate by phone."},
+  "community":{ipa:"/kəˈmjuːnəti/",pos:"n.",mean:"社区；群体",ex:"Our community needs more parks."},
+  "compare":{ipa:"/kəmˈpeə(r)/",pos:"v.",mean:"比较",ex:"Compare the two plans."},
+  "compete":{ipa:"/kəmˈpiːt/",pos:"v.",mean:"竞争",ex:"Many teams compete for the prize."},
+  "complain":{ipa:"/kəmˈpleɪn/",pos:"v.",mean:"抱怨",ex:"Stop complaining and work hard."},
+  "complex":{ipa:"/ˈkɒmpleks/",pos:"adj.",mean:"复杂的",ex:"This is a complex problem."},
+  "concern":{ipa:"/kənˈsɜːn/",pos:"n./v.",mean:"关心；担忧",ex:"We are concerned about his health."},
+  "conclude":{ipa:"/kənˈkluːd/",pos:"v.",mean:"得出结论",ex:"In conclusion, practice matters."},
+  "confidence":{ipa:"/ˈkɒnfɪdəns/",pos:"n.",mean:"信心",ex:"Confidence comes from preparation."},
+  "confirm":{ipa:"/kənˈfɜːm/",pos:"v.",mean:"确认",ex:"Please confirm your order."},
+  "confuse":{ipa:"/kənˈfjuːz/",pos:"v.",mean:"使困惑",ex:"The map confused me."},
+  "consider":{ipa:"/kənˈsɪdə(r)/",pos:"v.",mean:"考虑",ex:"Consider the cost first."},
+  "constant":{ipa:"/ˈkɒnstənt/",pos:"adj.",mean:"持续的",ex:"Practice makes constant progress."},
+  "construct":{ipa:"/kənˈstrʌkt/",pos:"v.",mean:"建造",ex:"They will construct a bridge."},
+  "consume":{ipa:"/kənˈsjuːm/",pos:"v.",mean:"消耗；消费",ex:"Cars consume a lot of energy."},
+  "contact":{ipa:"/ˈkɒntækt/",pos:"n./v.",mean:"联系",ex:"Keep in contact with your friends."},
+  "contain":{ipa:"/kənˈteɪn/",pos:"v.",mean:"包含",ex:"The box contains old books."},
+  "contribute":{ipa:"/kənˈtrɪbjuːt/",pos:"v.",mean:"贡献；促成",ex:"Exercise contributes to good health."},
+  "convenient":{ipa:"/kənˈviːniənt/",pos:"adj.",mean:"方便的",ex:"Online shopping is convenient."},
+  "convince":{ipa:"/kənˈvɪns/",pos:"v.",mean:"说服",ex:"I convinced him to join us."},
+  "cooperate":{ipa:"/kəʊˈɒpəreɪt/",pos:"v.",mean:"合作",ex:"We cooperate well as a team."},
+  "courage":{ipa:"/ˈkʌrɪdʒ/",pos:"n.",mean:"勇气",ex:"It takes courage to speak English."},
+  "create":{ipa:"/kriˈeɪt/",pos:"v.",mean:"创造",ex:"Create a good study environment."},
+  "culture":{ipa:"/ˈkʌltʃə(r)/",pos:"n.",mean:"文化",ex:"Respect different cultures."},
+  "curious":{ipa:"/ˈkjʊəriəs/",pos:"adj.",mean:"好奇的",ex:"Children are curious about everything."},
+  "damage":{ipa:"/ˈdæmɪdʒ/",pos:"n./v.",mean:"损害",ex:"Smoking damages your health."},
+  "debate":{ipa:"/dɪˈbeɪt/",pos:"n./v.",mean:"辩论",ex:"They had a heated debate."},
+  "declare":{ipa:"/dɪˈkleə(r)/",pos:"v.",mean:"宣布",ex:"The government declared a holiday."},
+  "decline":{ipa:"/dɪˈklaɪn/",pos:"v./n.",mean:"下降；婉拒",ex:"Sales declined this year."},
+  "defeat":{ipa:"/dɪˈfiːt/",pos:"v./n.",mean:"击败",ex:"Never admit defeat."},
+  "deliver":{ipa:"/dɪˈlɪvə(r)/",pos:"v.",mean:"递送；发表",ex:"Deliver the package on time."},
+  "demand":{ipa:"/dɪˈmɑːnd/",pos:"n./v.",mean:"需求；要求",ex:"There is a growing demand for it."},
+  "depend":{ipa:"/dɪˈpend/",pos:"v.",mean:"依靠；取决于",ex:"It depends on the weather."},
+  "describe":{ipa:"/dɪˈskraɪb/",pos:"v.",mean:"描述",ex:"Describe the picture in English."},
+  "deserve":{ipa:"/dɪˈzɜːv/",pos:"v.",mean:"值得",ex:"You deserve a good rest."},
+  "desire":{ipa:"/dɪˈzaɪə(r)/",pos:"n./v.",mean:"渴望",ex:"He has a strong desire to learn."},
+  "despite":{ipa:"/dɪˈspaɪt/",pos:"prep.",mean:"尽管",ex:"Despite the rain, we went out."},
+  "destroy":{ipa:"/dɪˈstrɔɪ/",pos:"v.",mean:"破坏",ex:"The fire destroyed the forest."},
+  "determine":{ipa:"/dɪˈtɜːmɪn/",pos:"v.",mean:"决定；决心",ex:"She is determined to succeed."},
+  "develop":{ipa:"/dɪˈveləp/",pos:"v.",mean:"发展；培养",ex:"Develop a good habit."},
+  "device":{ipa:"/dɪˈvaɪs/",pos:"n.",mean:"设备",ex:"Mobile devices are everywhere."},
+  "devote":{ipa:"/dɪˈvəʊt/",pos:"v.",mean:"献身；投入",ex:"Devote more time to study."},
+  "diet":{ipa:"/ˈdaɪət/",pos:"n.",mean:"饮食",ex:"A balanced diet is important."},
+  "differ":{ipa:"/ˈdɪfə(r)/",pos:"v.",mean:"不同",ex:"Opinions differ from person to person."},
+  "difficulty":{ipa:"/ˈdɪfɪkəlti/",pos:"n.",mean:"困难",ex:"Every difficulty can be overcome."},
+  "digital":{ipa:"/ˈdɪdʒɪtl/",pos:"adj.",mean:"数字的",ex:"Digital devices changed our life."},
+  "direct":{ipa:"/dəˈrekt/",pos:"adj./v.",mean:"直接的；指导",ex:"Take the direct way home."},
+  "disappear":{ipa:"/ˌdɪsəˈpɪə(r)/",pos:"v.",mean:"消失",ex:"The old house disappeared."},
+  "disappoint":{ipa:"/ˌdɪsəˈpɔɪnt/",pos:"v.",mean:"使失望",ex:"Don't disappoint your parents."},
+  "discover":{ipa:"/dɪˈskʌvə(r)/",pos:"v.",mean:"发现",ex:"Scientists discovered a new star."},
+  "discuss":{ipa:"/dɪˈskʌs/",pos:"v.",mean:"讨论",ex:"Let's discuss the plan."},
+  "disease":{ipa:"/dɪˈziːz/",pos:"n.",mean:"疾病",ex:"Exercise helps prevent disease."},
+  "display":{ipa:"/dɪˈspleɪ/",pos:"v./n.",mean:"展示",ex:"The museum displays old paintings."},
+  "distance":{ipa:"/ˈdɪstəns/",pos:"n.",mean:"距离",ex:"Keep a safe distance."},
+  "distribute":{ipa:"/dɪˈstrɪbjuːt/",pos:"v.",mean:"分发；分布",ex:"Distribute the papers to students."},
+  "disturb":{ipa:"/dɪˈstɜːb/",pos:"v.",mean:"打扰",ex:"Don't disturb him while studying."},
+  "diverse":{ipa:"/daɪˈvɜːs/",pos:"adj.",mean:"多样的",ex:"China has a diverse culture."},
+  "domestic":{ipa:"/dəˈmestɪk/",pos:"adj.",mean:"国内的；家庭的",ex:"Domestic travel is popular."},
+  "doubt":{ipa:"/daʊt/",pos:"n./v.",mean:"怀疑",ex:"I doubt whether it is true."},
+  "dramatic":{ipa:"/drəˈmætɪk/",pos:"adj.",mean:"巨大的；戏剧性的",ex:"There was a dramatic change."},
+  "eager":{ipa:"/ˈiːɡə(r)/",pos:"adj.",mean:"渴望的",ex:"He is eager to learn English."},
+  "earn":{ipa:"/ɜːn/",pos:"v.",mean:"赚；赢得",ex:"He earns money by tutoring."},
+  "economical":{ipa:"/ˌiːkəˈnɒmɪkl/",pos:"adj.",mean:"节约的",ex:"This car is economical."},
+  "educate":{ipa:"/ˈedʒukeɪt/",pos:"v.",mean:"教育",ex:"Parents educate their children."},
+  "effort":{ipa:"/ˈefət/",pos:"n.",mean:"努力",ex:"Make an effort to improve."},
+  "election":{ipa:"/ɪˈlekʃn/",pos:"n.",mean:"选举",ex:"The election will be held soon."},
+  "elementary":{ipa:"/ˌelɪˈmentri/",pos:"adj.",mean:"基本的；小学的",ex:"Elementary education is free."},
+  "eliminate":{ipa:"/ɪˈlɪmɪneɪt/",pos:"v.",mean:"消除",ex:"Eliminate bad habits."},
+  "embarrass":{ipa:"/ɪmˈbærəs/",pos:"v.",mean:"使尴尬",ex:"The question embarrassed me."},
+  "emerge":{ipa:"/iˈmɜːdʒ/",pos:"v.",mean:"出现",ex:"New problems emerge every day."},
+  "emotion":{ipa:"/ɪˈməʊʃn/",pos:"n.",mean:"情感",ex:"Control your emotions."},
+  "emphasis":{ipa:"/ˈemfəsɪs/",pos:"n.",mean:"强调",ex:"Put emphasis on listening."},
+  "employee":{ipa:"/ɪmˈplɔɪiː/",pos:"n.",mean:"雇员",ex:"The company has 500 employees."},
+  "enable":{ipa:"/ɪˈneɪbl/",pos:"v.",mean:"使能够",ex:"Internet enables us to learn online."},
+  "encounter":{ipa:"/ɪnˈkaʊntə(r)/",pos:"v./n.",mean:"遭遇；遇到",ex:"We encounter many difficulties."},
+  "encourage":{ipa:"/ɪnˈkʌrɪdʒ/",pos:"v.",mean:"鼓励",ex:"Teachers encourage students to ask."},
+  "energy":{ipa:"/ˈenədʒi/",pos:"n.",mean:"能量；精力",ex:"Save energy for tomorrow."},
+  "enormous":{ipa:"/ɪˈnɔːməs/",pos:"adj.",mean:"巨大的",ex:"An enormous amount of data."},
+  "ensure":{ipa:"/ɪnˈʃʊə(r)/",pos:"v.",mean:"确保",ex:"Ensure you arrive on time."},
+  "entertain":{ipa:"/ˌentəˈteɪn/",pos:"v.",mean:"娱乐；招待",ex:"Games entertain young people."},
+  "enthusiasm":{ipa:"/ɪnˈθjuːziæzəm/",pos:"n.",mean:"热情",ex:"She studies with enthusiasm."},
+  "entire":{ipa:"/ɪnˈtaɪə(r)/",pos:"adj.",mean:"整个的",ex:"He spent the entire day studying."},
+  "environment":{ipa:"/ɪnˈvaɪrənmənt/",pos:"n.",mean:"环境",ex:"Protect the environment."},
+  "equal":{ipa:"/ˈiːkwəl/",pos:"adj.",mean:"平等的；相等的",ex:"Everyone is equal before the law."},
+  "equipment":{ipa:"/ɪˈkwɪpmənt/",pos:"n.",mean:"设备（不可数）",ex:"The gym has modern equipment."},
+  "escape":{ipa:"/ɪˈskeɪp/",pos:"v./n.",mean:"逃跑；逃避",ex:"He escaped from the fire."},
+  "essential":{ipa:"/ɪˈsenʃl/",pos:"adj.",mean:"必不可少的",ex:"Water is essential to life."},
+  "establish":{ipa:"/ɪˈstæblɪʃ/",pos:"v.",mean:"建立",ex:"Establish a good relationship."},
+  "estimate":{ipa:"/ˈestɪmeɪt/",pos:"v./n.",mean:"估计",ex:"I estimate the cost at 100 yuan."},
+  "evaluate":{ipa:"/ɪˈvæljueɪt/",pos:"v.",mean:"评价",ex:"Evaluate your progress weekly."},
+  "eventually":{ipa:"/ɪˈventʃuəli/",pos:"adv.",mean:"最终",ex:"Eventually, he succeeded."},
+  "evidence":{ipa:"/ˈevɪdəns/",pos:"n.",mean:"证据",ex:"There is evidence of hard work."},
+  "exact":{ipa:"/ɪɡˈzækt/",pos:"adj.",mean:"准确的",ex:"Tell me the exact time."},
+  "examine":{ipa:"/ɪɡˈzæmɪn/",pos:"v.",mean:"检查；考试",ex:"The doctor examined the patient."},
+  "excellent":{ipa:"/ˈeksələnt/",pos:"adj.",mean:"极好的",ex:"She got an excellent grade."},
+  "exchange":{ipa:"/ɪksˈtʃeɪndʒ/",pos:"n./v.",mean:"交换；交流",ex:"An exchange student from the UK."},
+  "exhaust":{ipa:"/ɪɡˈzɔːst/",pos:"v.",mean:"使精疲力竭",ex:"The long trip exhausted me."},
+  "expand":{ipa:"/ɪkˈspænd/",pos:"v.",mean:"扩大",ex:"Expand your vocabulary daily."},
+  "expect":{ipa:"/ɪkˈspekt/",pos:"v.",mean:"期待；预料",ex:"I expect better results."},
+  "expense":{ipa:"/ɪkˈspens/",pos:"n.",mean:"花费",ex:"Study abroad costs a lot of expense."},
+  "experience":{ipa:"/ɪkˈspɪəriəns/",pos:"n./v.",mean:"经验；经历",ex:"Experience is the best teacher."},
+  "experiment":{ipa:"/ɪkˈsperɪmənt/",pos:"n./v.",mean:"实验",ex:"We did an experiment in class."},
+  "explain":{ipa:"/ɪkˈspleɪn/",pos:"v.",mean:"解释",ex:"Explain the rule to me."},
+  "explore":{ipa:"/ɪkˈsplɔː(r)/",pos:"v.",mean:"探索",ex:"Explore new learning methods."},
+  "expose":{ipa:"/ɪkˈspəʊz/",pos:"v.",mean:"暴露；接触",ex:"Don't expose yourself to danger."},
+  "express":{ipa:"/ɪkˈspres/",pos:"v.",mean:"表达",ex:"Express your ideas clearly."},
+  "extend":{ipa:"/ɪkˈstend/",pos:"v.",mean:"延伸；延长",ex:"They extended the library hours."},
+  "extraordinary":{ipa:"/ɪkˈstrɔːdnri/",pos:"adj.",mean:"非凡的",ex:"She has extraordinary talent."},
+  "familiar":{ipa:"/fəˈmɪliə(r)/",pos:"adj.",mean:"熟悉的",ex:"I am familiar with this song."},
+  "fascinate":{ipa:"/ˈfæsɪneɪt/",pos:"v.",mean:"使着迷",ex:"English fascinates me."},
+  "feature":{ipa:"/ˈfiːtʃə(r)/",pos:"n.",mean:"特征；功能",ex:"The phone has many features."},
+  "figure":{ipa:"/ˈfɪɡə(r)/",pos:"n./v.",mean:"数字；人物；认为",ex:"I figured out the problem."},
+  "finance":{ipa:"/ˈfaɪnæns/",pos:"n.",mean:"财务；资金",ex:"He studies finance."},
+  "focus":{ipa:"/ˈfəʊkəs/",pos:"v./n.",mean:"集中；焦点",ex:"Focus on your study."},
+  "forbid":{ipa:"/fəˈbɪd/",pos:"v.",mean:"禁止",ex:"Smoking is forbidden here."},
+  "forecast":{ipa:"/ˈfɔːkɑːst/",pos:"v./n.",mean:"预测",ex:"The weather forecast says rain."},
+  "formal":{ipa:"/ˈfɔːml/",pos:"adj.",mean:"正式的",ex:"Write a formal letter."},
+  "former":{ipa:"/ˈfɔːmə(r)/",pos:"adj.",mean:"前者的",ex:"My former teacher retired."},
+  "frequent":{ipa:"/ˈfriːkwənt/",pos:"adj.",mean:"经常的",ex:"He is a frequent visitor."},
+  "furthermore":{ipa:"/ˌfɜːðəˈmɔː(r)/",pos:"adv.",mean:"此外",ex:"Furthermore, it saves money."},
+  "generate":{ipa:"/ˈdʒenəreɪt/",pos:"v.",mean:"产生",ex:"Solar energy generates electricity."},
+  "generous":{ipa:"/ˈdʒenərəs/",pos:"adj.",mean:"慷慨的",ex:"He is generous with his time."},
+  "genius":{ipa:"/ˈdʒiːniəs/",pos:"n.",mean:"天才",ex:"Hard work beats genius."},
+  "global":{ipa:"/ˈɡləʊbl/",pos:"adj.",mean:"全球的",ex:"We face global warming."},
+  "gradually":{ipa:"/ˈɡrædʒuəli/",pos:"adv.",mean:"逐渐地",ex:"It improved gradually."},
+  "guarantee":{ipa:"/ˌɡærənˈtiː/",pos:"v./n.",mean:"保证",ex:"Never guarantee what you can't do."},
+  "handle":{ipa:"/ˈhændl/",pos:"v./n.",mean:"处理；把手",ex:"Handle the problem calmly."},
+  "harmony":{ipa:"/ˈhɑːməni/",pos:"n.",mean:"和谐",ex:"Live in harmony with nature."},
+  "highlight":{ipa:"/ˈhaɪlaɪt/",pos:"v./n.",mean:"突出；亮点",ex:"Highlight the key points."},
+  "identify":{ipa:"/aɪˈdentɪfaɪ/",pos:"v.",mean:"识别；确认",ex:"Identify the main idea."},
+  "ignore":{ipa:"/ɪɡˈnɔː(r)/",pos:"v.",mean:"忽视",ex:"Don't ignore small mistakes."},
+  "illustrate":{ipa:"/ˈɪləstreɪt/",pos:"v.",mean:"说明；举例",ex:"The chart illustrates the trend."},
+  "imitate":{ipa:"/ˈɪmɪteɪt/",pos:"v.",mean:"模仿",ex:"Imitate the native speakers."},
+  "immediate":{ipa:"/ɪˈmiːdiət/",pos:"adj.",mean:"立即的",ex:"Take immediate action."},
+  "impact":{ipa:"/ˈɪmpækt/",pos:"n.",mean:"影响",ex:"The Internet has a big impact."},
+  "implement":{ipa:"/ˈɪmplɪment/",pos:"v.",mean:"实施",ex:"Implement the new plan."},
+  "imply":{ipa:"/ɪmˈplaɪ/",pos:"v.",mean:"暗示",ex:"What do you imply by that?"},
+  "impress":{ipa:"/ɪmˈpres/",pos:"v.",mean:"给…印象",ex:"She impressed me with her speech."},
+  "improve":{ipa:"/ɪmˈpruːv/",pos:"v.",mean:"提高",ex:"Improve your pronunciation."},
+  "influence":{ipa:"/ˈɪnfluəns/",pos:"n./v.",mean:"影响",ex:"Friends influence our choices."},
+  "inform":{ipa:"/ɪnˈfɔːm/",pos:"v.",mean:"通知",ex:"Please inform me of the change."},
+  "injure":{ipa:"/ˈɪndʒə(r)/",pos:"v.",mean:"伤害",ex:"He injured his leg in a game."},
+  "innovation":{ipa:"/ˌɪnəˈveɪʃn/",pos:"n.",mean:"创新",ex:"Innovation drives progress."},
+  "insist":{ipa:"/ɪnˈsɪst/",pos:"v.",mean:"坚持",ex:"Insist on your dreams."},
+  "inspire":{ipa:"/ɪnˈspaɪə(r)/",pos:"v.",mean:"鼓舞",ex:"Her story inspired many people."},
+  "install":{ipa:"/ɪnˈstɔːl/",pos:"v.",mean:"安装",ex:"Install the app on your phone."},
+  "instance":{ipa:"/ˈɪnstəns/",pos:"n.",mean:"例子",ex:"For instance, take notes daily."},
+  "institute":{ipa:"/ˈɪnstɪtjuːt/",pos:"n.",mean:"学院；研究所",ex:"He works at a research institute."},
+  "insurance":{ipa:"/ɪnˈʃʊərəns/",pos:"n.",mean:"保险",ex:"Health insurance is necessary."},
+  "intelligent":{ipa:"/ɪnˈtelɪdʒənt/",pos:"adj.",mean:"聪明的",ex:"An intelligent robot answers questions."},
+  "intend":{ipa:"/ɪnˈtend/",pos:"v.",mean:"打算",ex:"I intend to study harder."},
+  "interaction":{ipa:"/ˌɪntərˈækʃn/",pos:"n.",mean:"互动",ex:"Online interaction grows daily."},
+  "interpret":{ipa:"/ɪnˈtɜːprɪt/",pos:"v.",mean:"口译；解释",ex:"Interpret the meaning of the poem."},
+  "interview":{ipa:"/ˈɪntəvjuː/",pos:"n./v.",mean:"面试；采访",ex:"I have a job interview tomorrow."},
+  "introduce":{ipa:"/ˌɪntrəˈdjuːs/",pos:"v.",mean:"介绍",ex:"Let me introduce myself."},
+  "invest":{ipa:"/ɪnˈvest/",pos:"v.",mean:"投资",ex:"Invest time in learning."},
+  "investigate":{ipa:"/ɪnˈvestɪɡeɪt/",pos:"v.",mean:"调查",ex:"The police investigated the case."},
+  "involve":{ipa:"/ɪnˈvɒlv/",pos:"v.",mean:"涉及；使参与",ex:"The job involves travel."},
+  "issue":{ipa:"/ˈɪʃuː/",pos:"n./v.",mean:"问题；发布",ex:"Environmental issues are serious."},
+  "journal":{ipa:"/ˈdʒɜːnl/",pos:"n.",mean:"期刊；日志",ex:"Keep a study journal."},
+  "judge":{ipa:"/dʒʌdʒ/",pos:"v./n.",mean:"判断；法官",ex:"Don't judge a book by its cover."},
+  "justify":{ipa:"/ˈdʒʌstɪfaɪ/",pos:"v.",mean:"证明…有理",ex:"Nothing can justify lying."},
+  "knowledge":{ipa:"/ˈnɒlɪdʒ/",pos:"n.",mean:"知识",ex:"Knowledge is power."},
+  "label":{ipa:"/ˈleɪbl/",pos:"n./v.",mean:"标签",ex:"Read the label carefully."},
+  "launch":{ipa:"/lɔːntʃ/",pos:"v./n.",mean:"发射；发起",ex:"Launch a new product."},
+  "leisure":{ipa:"/ˈleʒə(r)/",pos:"n.",mean:"闲暇",ex:"Enjoy your leisure time."},
+  "liberate":{ipa:"/ˈlɪbəreɪt/",pos:"v.",mean:"解放",ex:"Technology liberates us from housework."},
+  "license":{ipa:"/ˈlaɪsns/",pos:"n.",mean:"执照",ex:"He got a driving license."},
+  "limited":{ipa:"/ˈlɪmɪtɪd/",pos:"adj.",mean:"有限的",ex:"Time is limited."},
+  "locate":{ipa:"/ləʊˈkeɪt/",pos:"v.",mean:"位于；定位",ex:"The school is located downtown."},
+  "maintain":{ipa:"/meɪnˈteɪn/",pos:"v.",mean:"维持；保养",ex:"Maintain a healthy weight."},
+  "majority":{ipa:"/məˈdʒɒrəti/",pos:"n.",mean:"大多数",ex:"The majority of students agree."},
+  "manage":{ipa:"/ˈmænɪdʒ/",pos:"v.",mean:"管理；设法",ex:"Manage your time well."},
+  "manufacture":{ipa:"/ˌmænjuˈfæktʃə(r)/",pos:"v.",mean:"制造",ex:"The factory manufactures toys."},
+  "mature":{ipa:"/məˈtʃʊə(r)/",pos:"adj.",mean:"成熟的",ex:"He is mature for his age."},
+  "measure":{ipa:"/ˈmeʒə(r)/",pos:"v./n.",mean:"测量；措施",ex:"Take measures to reduce waste."},
+  "mental":{ipa:"/ˈmentl/",pos:"adj.",mean:"心理的",ex:"Mental health matters."},
+  "mention":{ipa:"/ˈmenʃn/",pos:"v.",mean:"提到",ex:"He mentioned your name."},
+  "method":{ipa:"/ˈmeθəd/",pos:"n.",mean:"方法",ex:"Find a suitable method."},
+  "minimum":{ipa:"/ˈmɪnɪməm/",pos:"n./adj.",mean:"最小（的）",ex:"A minimum of 30 minutes daily."},
+  "minority":{ipa:"/maɪˈnɒrəti/",pos:"n.",mean:"少数",ex:"A minority of students agree."},
+  "modern":{ipa:"/ˈmɒdn/",pos:"adj.",mean:"现代的",ex:"Modern life is fast-paced."},
+  "motivate":{ipa:"/ˈməʊtɪveɪt/",pos:"v.",mean:"激励",ex:"Praise motivates students."},
+  "mutual":{ipa:"/ˈmjuːtʃuəl/",pos:"adj.",mean:"相互的",ex:"Learning is a mutual process."},
+  "negative":{ipa:"/ˈneɡətɪv/",pos:"adj.",mean:"消极的",ex:"A negative attitude hurts you."},
+  "negotiate":{ipa:"/nɪˈɡəʊʃieɪt/",pos:"v.",mean:"谈判",ex:"They negotiated the price."},
+  "obtain":{ipa:"/əbˈteɪn/",pos:"v.",mean:"获得",ex:"Obtain useful information online."},
+  "obvious":{ipa:"/ˈɒbviəs/",pos:"adj.",mean:"明显的",ex:"It is obvious that he is tired."},
+  "occupy":{ipa:"/ˈɒkjupaɪ/",pos:"v.",mean:"占据；使忙碌",ex:"Games occupy too much time."},
+  "occur":{ipa:"/əˈkɜː(r)/",pos:"v.",mean:"发生",ex:"When did the accident occur?"},
+  "operate":{ipa:"/ˈɒpəreɪt/",pos:"v.",mean:"操作；运转",ex:"Learn how to operate the machine."},
+  "opportunity":{ipa:"/ˌɒpəˈtjuːnəti/",pos:"n.",mean:"机会",ex:"Don't miss the opportunity."},
+  "oppose":{ipa:"/əˈpəʊz/",pos:"v.",mean:"反对",ex:"He opposed the plan."},
+  "organize":{ipa:"/ˈɔːɡənaɪz/",pos:"v.",mean:"组织",ex:"Organize your notes before review."},
+  "original":{ipa:"/əˈrɪdʒənl/",pos:"adj.",mean:"最初的；原创的",ex:"This is an original idea."},
+  "outstanding":{ipa:"/aʊtˈstændɪŋ/",pos:"adj.",mean:"杰出的",ex:"She is an outstanding student."},
+  "overcome":{ipa:"/ˌəʊvəˈkʌm/",pos:"v.",mean:"克服",ex:"Overcome your fear of speaking."},
+  "participate":{ipa:"/pɑːˈtɪsɪpeɪt/",pos:"v.",mean:"参加",ex:"Participate in class activities."},
+  "particular":{ipa:"/pəˈtɪkjələ(r)/",pos:"adj.",mean:"特别的",ex:"Pay particular attention to spelling."},
+  "passion":{ipa:"/ˈpæʃn/",pos:"n.",mean:"热情",ex:"Follow your passion."},
+  "patience":{ipa:"/ˈpeɪʃns/",pos:"n.",mean:"耐心",ex:"Learning needs patience."},
+  "perform":{ipa:"/pəˈfɔːm/",pos:"v.",mean:"表演；执行",ex:"Perform well in the exam."},
+  "permanent":{ipa:"/ˈpɜːmənənt/",pos:"adj.",mean:"永久的",ex:"A permanent solution is needed."},
+  "persuade":{ipa:"/pəˈsweɪd/",pos:"v.",mean:"说服",ex:"I persuaded him to rest."},
+  "physical":{ipa:"/ˈfɪzɪkl/",pos:"adj.",mean:"身体的；物理的",ex:"Physical exercise keeps you fit."},
+  "planet":{ipa:"/ˈplænɪt/",pos:"n.",mean:"行星；地球",ex:"Protect our planet."},
+  "policy":{ipa:"/ˈpɒləsi/",pos:"n.",mean:"政策",ex:"The new policy helps students."},
+  "positive":{ipa:"/ˈpɒzətɪv/",pos:"adj.",mean:"积极的",ex:"Stay positive every day."},
+  "potential":{ipa:"/pəˈtenʃl/",pos:"n./adj.",mean:"潜力；潜在的",ex:"Everyone has potential."},
+  "predict":{ipa:"/prɪˈdɪkt/",pos:"v.",mean:"预测",ex:"It is hard to predict the future."},
+  "prefer":{ipa:"/prɪˈfɜː(r)/",pos:"v.",mean:"更喜欢",ex:"I prefer tea to coffee."},
+  "preserve":{ipa:"/prɪˈzɜːv/",pos:"v.",mean:"保护；保存",ex:"Preserve the old buildings."},
+  "pressure":{ipa:"/ˈpreʃə(r)/",pos:"n.",mean:"压力",ex:"Exam pressure is normal."},
+  "prevent":{ipa:"/prɪˈvent/",pos:"v.",mean:"防止",ex:"Prevent yourself from procrastinating."},
+  "previous":{ipa:"/ˈpriːviəs/",pos:"adj.",mean:"先前的",ex:"Compare it with the previous one."},
+  "primary":{ipa:"/ˈpraɪməri/",pos:"adj.",mean:"主要的；初级的",ex:"The primary goal is learning."},
+  "principle":{ipa:"/ˈprɪnsəpl/",pos:"n.",mean:"原则",ex:"Stick to your principles."},
+  "priority":{ipa:"/praɪˈɒrəti/",pos:"n.",mean:"优先事项",ex:"Study should be your priority."},
+  "procedure":{ipa:"/prəˈsiːdʒə(r)/",pos:"n.",mean:"程序；步骤",ex:"Follow the proper procedure."},
+  "process":{ipa:"/ˈprəʊses/",pos:"n./v.",mean:"过程；处理",ex:"Learning is a slow process."},
+  "produce":{ipa:"/prəˈdjuːs/",pos:"v.",mean:"生产；产生",ex:"Produce good results."},
+  "progress":{ipa:"/ˈprəʊɡres/",pos:"n./v.",mean:"进步",ex:"Make progress step by step."},
+  "promote":{ipa:"/prəˈməʊt/",pos:"v.",mean:"促进；晋升",ex:"Promote healthy eating."},
+  "propose":{ipa:"/prəˈpəʊz/",pos:"v.",mean:"提议",ex:"I propose a new schedule."},
+  "protect":{ipa:"/prəˈtekt/",pos:"v.",mean:"保护",ex:"Protect your eyes from screens."},
+  "provide":{ipa:"/prəˈvaɪd/",pos:"v.",mean:"提供",ex:"The app provides useful tools."},
+  "psychology":{ipa:"/saɪˈkɒlədʒi/",pos:"n.",mean:"心理学",ex:"He studies psychology."},
+  "purpose":{ipa:"/ˈpɜːpəs/",pos:"n.",mean:"目的",ex:"Know your purpose of learning."},
+  "pursue":{ipa:"/pəˈsjuː/",pos:"v.",mean:"追求",ex:"Pursue your dream bravely."},
+  "quality":{ipa:"/ˈkwɒləti/",pos:"n.",mean:"质量；品质",ex:"Quality matters more than quantity."},
+  "quantity":{ipa:"/ˈkwɒntəti/",pos:"n.",mean:"数量",ex:"A large quantity of books."},
+  "range":{ipa:"/reɪndʒ/",pos:"n.",mean:"范围",ex:"The price ranges from 10 to 20."},
+  "rapid":{ipa:"/ˈræpɪd/",pos:"adj.",mean:"迅速的",ex:"Rapid economic growth."},
+  "reach":{ipa:"/riːtʃ/",pos:"v.",mean:"到达；达到",ex:"Reach your goal step by step."},
+  "react":{ipa:"/riˈækt/",pos:"v.",mean:"反应",ex:"Don't react too quickly."},
+  "realize":{ipa:"/ˈrɪəlaɪz/",pos:"v.",mean:"意识到；实现",ex:"I realized my mistake."},
+  "recent":{ipa:"/ˈriːsnt/",pos:"adj.",mean:"最近的",ex:"Recent research shows..."},
+  "recognize":{ipa:"/ˈrekəɡnaɪz/",pos:"v.",mean:"认出；承认",ex:"I recognized her voice."},
+  "recommend":{ipa:"/ˌrekəˈmend/",pos:"v.",mean:"推荐",ex:"I recommend this book to you."},
+  "recover":{ipa:"/rɪˈkʌvə(r)/",pos:"v.",mean:"恢复",ex:"He recovered from the cold."},
+  "reduce":{ipa:"/rɪˈdjuːs/",pos:"v.",mean:"减少",ex:"Reduce screen time."},
+  "refer":{ipa:"/rɪˈfɜː(r)/",pos:"v.",mean:"提到；参考",ex:"Refer to the dictionary."},
+  "reflect":{ipa:"/rɪˈflekt/",pos:"v.",mean:"反映；反思",ex:"Reflect on your study daily."},
+  "refuse":{ipa:"/rɪˈfjuːz/",pos:"v.",mean:"拒绝",ex:"Never refuse to learn."},
+  "regard":{ipa:"/rɪˈɡɑːd/",pos:"v./n.",mean:"看待；尊重",ex:"I regard him as a friend."},
+  "regular":{ipa:"/ˈreɡjələ(r)/",pos:"adj.",mean:"规律的；定期的",ex:"Regular review is the key."},
+  "reject":{ipa:"/rɪˈdʒekt/",pos:"v.",mean:"拒绝；排斥",ex:"He rejected the offer."},
+  "relevant":{ipa:"/ˈreləvənt/",pos:"adj.",mean:"相关的",ex:"Give relevant examples."},
+  "reliable":{ipa:"/rɪˈlaɪəbl/",pos:"adj.",mean:"可靠的",ex:"Find a reliable study partner."},
+  "relief":{ipa:"/rɪˈliːf/",pos:"n.",mean:"宽慰",ex:"We breathed a sigh of relief."},
+  "remain":{ipa:"/rɪˈmeɪn/",pos:"v.",mean:"保持；剩余",ex:"Remain calm under pressure."},
+  "remarkable":{ipa:"/rɪˈmɑːkəbl/",pos:"adj.",mean:"显著的",ex:"Remarkable progress in one month."},
+  "remind":{ipa:"/rɪˈmaɪnd/",pos:"v.",mean:"提醒",ex:"Remind me to review words."},
+  "replace":{ipa:"/rɪˈpleɪs/",pos:"v.",mean:"代替",ex:"Nothing can replace hard work."},
+  "represent":{ipa:"/ˌreprɪˈzent/",pos:"v.",mean:"代表",ex:"The chart represents the data."},
+  "require":{ipa:"/rɪˈkwaɪə(r)/",pos:"v.",mean:"需要；要求",ex:"This job requires patience."},
+  "research":{ipa:"/rɪˈsɜːtʃ/",pos:"n./v.",mean:"研究",ex:"Do some research before writing."},
+  "reserve":{ipa:"/rɪˈzɜːv/",pos:"v.",mean:"预订；保留",ex:"Reserve a seat in the library."},
+  "resolve":{ipa:"/rɪˈzɒlv/",pos:"v.",mean:"解决；决心",ex:"Resolve conflicts peacefully."},
+  "resource":{ipa:"/rɪˈsɔːs/",pos:"n.",mean:"资源",ex:"Use online resources wisely."},
+  "respect":{ipa:"/rɪˈspekt/",pos:"v./n.",mean:"尊重",ex:"Respect teachers and classmates."},
+  "respond":{ipa:"/rɪˈspɒnd/",pos:"v.",mean:"回答；回应",ex:"Respond to questions actively."},
+  "responsibility":{ipa:"/rɪˌspɒnsəˈbɪləti/",pos:"n.",mean:"责任",ex:"Take responsibility for yourself."},
+  "restore":{ipa:"/rɪˈstɔː(r)/",pos:"v.",mean:"恢复；修复",ex:"Restore the old photos."},
+  "restrict":{ipa:"/rɪˈstrɪkt/",pos:"v.",mean:"限制",ex:"Restrict your online time."},
+  "result":{ipa:"/rɪˈzʌlt/",pos:"n.",mean:"结果",ex:"Hard work leads to good results."},
+  "reveal":{ipa:"/rɪˈviːl/",pos:"v.",mean:"揭示；透露",ex:"The survey reveals the truth."},
+  "reward":{ipa:"/rɪˈwɔːd/",pos:"n./v.",mean:"奖励",ex:"Reward yourself after a goal."},
+  "routine":{ipa:"/ruːˈtiːn/",pos:"n.",mean:"日常事务",ex:"Build a daily study routine."},
+  "satisfy":{ipa:"/ˈsætɪsfaɪ/",pos:"v.",mean:"使满意",ex:"The result satisfied everyone."},
+  "schedule":{ipa:"/ˈʃedjuːl/",pos:"n./v.",mean:"时间表",ex:"Make a weekly schedule."},
+  "section":{ipa:"/ˈsekʃn/",pos:"n.",mean:"部分",ex:"Read this section carefully."},
+  "secure":{ipa:"/sɪˈkjʊə(r)/",pos:"adj./v.",mean:"安全的；获得",ex:"Secure a good job after college."},
+  "select":{ipa:"/sɪˈlekt/",pos:"v.",mean:"选择",ex:"Select the correct answer."},
+  "sensitive":{ipa:"/ˈsensətɪv/",pos:"adj.",mean:"敏感的",ex:"Be sensitive to others' feelings."},
+  "separate":{ipa:"/ˈsepəreɪt/",pos:"v./adj.",mean:"分开（的）",ex:"Separate the good from the bad."},
+  "series":{ipa:"/ˈsɪəriːz/",pos:"n.",mean:"系列",ex:"A series of lectures on CET-4."},
+  "significant":{ipa:"/sɪɡˈnɪfɪkənt/",pos:"adj.",mean:"重要的；显著的",ex:"A significant improvement."},
+  "similar":{ipa:"/ˈsɪmələ(r)/",pos:"adj.",mean:"相似的",ex:"The two words are similar."},
+  "situation":{ipa:"/ˌsɪtʃuˈeɪʃn/",pos:"n.",mean:"情况",ex:"The situation is under control."},
+  "society":{ipa:"/səˈsaɪəti/",pos:"n.",mean:"社会",ex:"Contribute to society."},
+  "solution":{ipa:"/səˈluːʃn/",pos:"n.",mean:"解决办法",ex:"Find a solution to the problem."},
+  "source":{ipa:"/sɔːs/",pos:"n.",mean:"来源",ex:"Check your information sources."},
+  "specific":{ipa:"/spəˈsɪfɪk/",pos:"adj.",mean:"具体的",ex:"Give specific examples."},
+  "standard":{ipa:"/ˈstændəd/",pos:"n./adj.",mean:"标准（的）",ex:"Meet the standard."},
+  "strategy":{ipa:"/ˈstrætədʒi/",pos:"n.",mean:"策略",ex:"A good strategy saves time."},
+  "strength":{ipa:"/streŋθ/",pos:"n.",mean:"力量；优点",ex:"Know your strengths."},
+  "stress":{ipa:"/stres/",pos:"n./v.",mean:"压力；强调",ex:"Stress is unavoidable in exams."},
+  "structure":{ipa:"/ˈstrʌktʃə(r)/",pos:"n.",mean:"结构",ex:"The structure of the essay."},
+  "submit":{ipa:"/səbˈmɪt/",pos:"v.",mean:"提交",ex:"Submit your homework on time."},
+  "subsequent":{ipa:"/ˈsʌbsɪkwənt/",pos:"adj.",mean:"随后的",ex:"Subsequent events confirmed it."},
+  "sufficient":{ipa:"/səˈfɪʃnt/",pos:"adj.",mean:"足够的",ex:"Get sufficient sleep."},
+  "suggest":{ipa:"/səˈdʒest/",pos:"v.",mean:"建议；表明",ex:"I suggest reviewing daily."},
+  "suitable":{ipa:"/ˈsuːtəbl/",pos:"adj.",mean:"合适的",ex:"Choose a suitable time."},
+  "support":{ipa:"/səˈpɔːt/",pos:"v./n.",mean:"支持",ex:"Families support our study."},
+  "surround":{ipa:"/səˈraʊnd/",pos:"v.",mean:"包围",ex:"Surround yourself with good books."},
+  "survey":{ipa:"/ˈsɜːveɪ/",pos:"n./v.",mean:"调查",ex:"The survey shows a trend."},
+  "survive":{ipa:"/səˈvaɪv/",pos:"v.",mean:"幸存",ex:"English helps you survive abroad."},
+  "sustain":{ipa:"/səˈsteɪn/",pos:"v.",mean:"维持",ex:"Sustain your motivation."},
+  "symbol":{ipa:"/ˈsɪmbl/",pos:"n.",mean:"象征",ex:"The dove is a symbol of peace."},
+  "talent":{ipa:"/ˈtælənt/",pos:"n.",mean:"天赋",ex:"Practice beats talent."},
+  "technique":{ipa:"/tekˈniːk/",pos:"n.",mean:"技巧",ex:"Learn test-taking techniques."},
+  "tend":{ipa:"/tend/",pos:"v.",mean:"倾向于",ex:"Students tend to stay up late."},
+  "theory":{ipa:"/ˈθɪəri/",pos:"n.",mean:"理论",ex:"Put theory into practice."},
+  "threaten":{ipa:"/ˈθretn/",pos:"v.",mean:"威胁",ex:"Pollution threatens wildlife."},
+  "tolerance":{ipa:"/ˈtɒlərəns/",pos:"n.",mean:"容忍",ex:"Show tolerance to others."},
+  "tradition":{ipa:"/trəˈdɪʃn/",pos:"n.",mean:"传统",ex:"Keep our traditions alive."},
+  "transfer":{ipa:"/trænsˈfɜː(r)/",pos:"v./n.",mean:"转移；转学",ex:"Transfer files to the phone."},
+  "transform":{ipa:"/trænsˈfɔːm/",pos:"v.",mean:"改变；转变",ex:"The Internet transforms education."},
+  "transport":{ipa:"/ˈtrænspɔːt/",pos:"n./v.",mean:"交通；运输",ex:"Public transport is convenient."},
+  "trend":{ipa:"/trend/",pos:"n.",mean:"趋势",ex:"Follow the trend of online learning."},
+  "typical":{ipa:"/ˈtɪpɪkl/",pos:"adj.",mean:"典型的",ex:"A typical day at college."},
+  "unique":{ipa:"/juˈniːk/",pos:"adj.",mean:"独特的",ex:"Everyone has unique value."},
+  "universal":{ipa:"/ˌjuːnɪˈvɜːsl/",pos:"adj.",mean:"普遍的",ex:"A universal truth."},
+  "urgent":{ipa:"/ˈɜːdʒənt/",pos:"adj.",mean:"紧急的",ex:"Take urgent action."},
+  "valuable":{ipa:"/ˈvæljuəbl/",pos:"adj.",mean:"宝贵的",ex:"Valuable advice from the teacher."},
+  "various":{ipa:"/ˈveəriəs/",pos:"adj.",mean:"各种各样的",ex:"Various learning materials."},
+  "vehicle":{ipa:"/ˈviːəkl/",pos:"n.",mean:"车辆",ex:"Electric vehicles are popular."},
+  "version":{ipa:"/ˈvɜːʃn/",pos:"n.",mean:"版本",ex:"The latest version of the app."},
+  "victory":{ipa:"/ˈvɪktəri/",pos:"n.",mean:"胜利",ex:"Victory belongs to the persistent."},
+  "virtual":{ipa:"/ˈvɜːtʃuəl/",pos:"adj.",mean:"虚拟的",ex:"Virtual classrooms are common."},
+  "visible":{ipa:"/ˈvɪzəbl/",pos:"adj.",mean:"可见的",ex:"Visible progress every week."},
+  "volunteer":{ipa:"/ˌvɒlənˈtɪə(r)/",pos:"n./v.",mean:"志愿者；自愿",ex:"Volunteer in community service."},
+  "widespread":{ipa:"/ˈwaɪdspred/",pos:"adj.",mean:"广泛的",ex:"Widespread use of smartphones."},
+  "willing":{ipa:"/ˈwɪlɪŋ/",pos:"adj.",mean:"愿意的",ex:"Be willing to ask questions."}};
+
+const cet4WordList = Object.keys(wordBank).join(" ");
 
 let currentCetText = "";
 
@@ -484,13 +941,14 @@ rateRange.oninput = () => rateVal.innerText = parseFloat(rateRange.value).toFixe
 /* ================= 页面切换 ================= */
 function switchTab(tab){
   currentTab = tab;
-  ['speech','word','cet4','grammar','chat','setting'].forEach(t=>{
+  ['speech','word','cet4','essay','grammar','chat','setting'].forEach(t=>{
     $('panel-'+t).style.display = t===tab ? 'block' : 'none';
   });
   document.querySelectorAll('.tabbar button').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab === tab);
   });
   if(tab==='grammar') renderGrammar();
+  if(tab==='essay') renderEssay();
 }
 
 /* ================= 口播：录音与识别 ================= */
@@ -1030,6 +1488,7 @@ function setWordMode(mode){
 function loadWords(){
   parseWordInput();
   if(!words.length){ alert("请先输入或导入单词"); return; }
+  localStorage.setItem('todayWords', String(words.length));
   wordIdx = 0;
   buildCards(words);
   // 按 10 个一组分组
@@ -1127,6 +1586,7 @@ function selfAssess(level){
   const list = groups[groupIdx] || [];
   const c = list[cardIdx];
   stats[level]++;
+  if(level === 'no' && c) addWrong(c.word);
   assessed = true;
   $('wMeanHint').style.display = 'none';
   $('wMeanBody').style.display = 'block';
@@ -1296,12 +1756,31 @@ function loadCet4Item(){
   const type = $('cetType').value;
   const list = cet4Data[type];
   let html = "";
-  list.forEach((item,idx)=>{
-    html += `<div class="cet-item" onclick="selectCet('${type}',${idx})"><div class="t">【${item.title}】</div>${escHtml(item.content)}</div>`;
-  });
+  if(type === 'quiz'){
+    list.forEach((item,idx)=>{
+      const optsHtml = item.opts.map((o,i)=>`<div class="q-opt" onclick="answerQuiz(${idx},${i})">${String.fromCharCode(65+i)}. ${escHtml(o)}</div>`).join('');
+      html += `<div class="cet-item quiz-item" id="quiz${idx}"><div class="t">${idx+1}. ${escHtml(item.q)}</div>${optsHtml}<div class="q-exp" id="qexp${idx}" style="display:none"></div></div>`;
+    });
+  } else {
+    list.forEach((item,idx)=>{
+      html += `<div class="cet-item" onclick="selectCet('${type}',${idx})"><div class="t">【${item.title}】</div>${escHtml(item.content)}</div>`;
+    });
+  }
   $('cet4Lib').innerHTML = html;
 }
+function answerQuiz(idx, i){
+  const item = cet4Data.quiz[idx];
+  const box = $('quiz' + idx);
+  const ex = $('qexp' + idx);
+  box.querySelectorAll('.q-opt').forEach(el=>el.classList.remove('q-right','q-wrong'));
+  const opts = box.querySelectorAll('.q-opt');
+  if(i === item.ans){ opts[i].classList.add('q-right'); }
+  else { opts[i].classList.add('q-wrong'); opts[item.ans].classList.add('q-right'); }
+  ex.style.display = 'block';
+  ex.innerText = (i === item.ans ? '✅ 答对了！' : '❌ 答错了。') + '解析：' + item.exp;
+}
 function selectCet(type,idx){
+  if(type === 'quiz') return;
   currentCetText = cet4Data[type][idx].content;
   $('cet4Lib').innerHTML = `<div class="cet-item" style="border:2px solid var(--primary)"><div class="t">已选：${cet4Data[type][idx].title} ✓</div>${escHtml(currentCetText)}</div>`;
 }
@@ -1491,8 +1970,172 @@ function renderGrammar(){
   $('grammarList').innerHTML = html;
 }
 
+/* ================= 生词本 ================= */
+function getWrong(){
+  try{ return JSON.parse(localStorage.getItem('wrongWords') || '[]'); }catch(e){ return []; }
+}
+function addWrong(w){
+  const arr = getWrong();
+  if(!arr.includes(w)){ arr.push(w); localStorage.setItem('wrongWords', JSON.stringify(arr)); }
+  updateWrongBtn();
+}
+function removeWrong(w){
+  localStorage.setItem('wrongWords', JSON.stringify(getWrong().filter(x=>x!==w)));
+  renderWrong(); updateWrongBtn();
+}
+function clearWrong(){
+  localStorage.setItem('wrongWords', '[]');
+  renderWrong(); updateWrongBtn();
+}
+function updateWrongBtn(){
+  const b = $('btnWrong');
+  if(b) b.innerText = '📒 生词本(' + getWrong().length + ')';
+}
+function openWrong(){
+  $('wrongModal').style.display = 'flex';
+  renderWrong();
+}
+function closeWrong(){
+  $('wrongModal').style.display = 'none';
+}
+function renderWrong(){
+  const arr = getWrong();
+  const box = $('wrongList');
+  if(!arr.length){
+    box.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px 0">还没有生词 👍<br>词卡里点「😵 生词」就会自动收进来</div>';
+    return;
+  }
+  box.innerHTML = arr.map(w=>{
+    const info = wordBank[w] || {mean:'自定义单词', ex:'', pos:''};
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--gray)">
+      <div style="flex:1"><b style="font-size:15px">${escHtml(w)}</b><div style="color:var(--muted);font-size:13px">${escHtml(info.pos + ' ' + info.mean)}</div></div>
+      <button class="small-btn" onclick="speakText('${w}','en-US')">🔊</button>
+      <button class="small-btn sec" onclick="removeWrong('${w}')">移除</button>
+    </div>`;
+  }).join('');
+  box.innerHTML += '<div style="padding:12px 0 4px;font-size:12px;color:var(--muted)">提示：点 🔊 听发音，每天复习一遍生词本</div>';
+}
+
+/* ================= 每日打卡 ================= */
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+}
+function checkin(){
+  const today = todayStr();
+  const last = localStorage.getItem('checkinLast') || '';
+  let streak = parseInt(localStorage.getItem('checkinStreak') || '0', 10) || 0;
+  if(last !== today){
+    if(last){
+      const p = last.split('-'), q = today.split('-');
+      const d1 = new Date(+p[0], +p[1]-1, +p[2]), d2 = new Date(+q[0], +q[1]-1, +q[2]);
+      const diff = Math.round((d2 - d1) / 86400000);
+      streak = (diff === 1) ? streak + 1 : 1;
+    } else {
+      streak = 1;
+    }
+    localStorage.setItem('checkinLast', today);
+    localStorage.setItem('checkinStreak', String(streak));
+    localStorage.setItem('checkinTotal', String((parseInt(localStorage.getItem('checkinTotal')||'0',10)||0) + 1));
+  }
+  const a = $('statStreak'), b = $('statTotal'), c = $('statToday');
+  if(a) a.innerText = streak;
+  if(b) b.innerText = localStorage.getItem('checkinTotal') || '0';
+  if(c) c.innerText = localStorage.getItem('todayWords') || '0';
+}
+
+/* ================= 作文 ================= */
+const essayTemplates = [
+  {t:"① 观点论证类", ct:"题目给一个观点/话题，让你表态并论证。结构：开头表态 → 2-3 个理由 → 结尾总结。",
+   tpl:"<b>开头：</b>When it comes to (话题), opinions vary from person to person. As far as I am concerned, I strongly agree with the view that (观点).<br><b>主体：</b>To begin with, (理由1). In addition, (理由2). Furthermore, (理由3).<br><b>结尾：</b>Taking all these factors into consideration, I hold the view that (重申观点). Only in this way can we (展望)."},
+  {t:"② 利弊分析类", ct:"问某事物/现象的好处和坏处。结构：引出 → 利 → 弊 → 我的看法。",
+   tpl:"<b>开头：</b>Nowadays, (事物/现象) has become increasingly popular, which has both advantages and disadvantages.<br><b>利：</b>On the one hand, it brings us great convenience. For example, (例子). Moreover, it helps us (好处).<br><b>弊：</b>On the other hand, it also causes some problems. To be specific, (问题).<br><b>结尾：</b>As far as I am concerned, we should make the best use of its advantages and avoid its disadvantages."},
+  {t:"③ 现象解释类", ct:"描述一个现象并分析原因。结构：描述现象 → 分析原因 → 总结。",
+   tpl:"<b>开头：</b>In recent years, (现象) has drawn wide attention in our society.<br><b>原因：</b>There are several reasons for this. First of all, (原因1). What's more, (原因2). Last but not least, (原因3).<br><b>结尾：</b>From what has been discussed above, we may safely draw the conclusion that (结论)."},
+  {t:"④ 问题解决类", ct:"提出一个社会/校园问题并给建议。结构：问题 → 建议 → 呼吁。",
+   tpl:"<b>开头：</b>Nowadays, (问题) has become a serious problem that we cannot ignore.<br><b>建议：</b>To solve this problem, the following measures should be taken. For one thing, we should (建议1). For another, it is necessary to (建议2). In addition, the government/schools should (建议3).<br><b>结尾：</b>Only in this way can we (解决问题). Let us take action right now."},
+  {t:"⑤ 图画/图表类", ct:"描述图画/图表并发表看法。结构：描述 → 揭示含义 → 评论。",
+   tpl:"<b>描述：</b>As is vividly shown in the picture/chart, (画面描述).<br><b>含义：</b>Obviously, the picture is intended to tell us that (寓意).<br><b>评论：</b>This phenomenon reminds us that (联系现实). Therefore, we should (看法/建议)."},
+  {t:"⑥ 书信应用类", ct:"给对方写信（建议信/邀请信/感谢信/投诉信）。结构：称呼 → 目的 → 内容 → 结尾套话。",
+   tpl:"<b>称呼：</b>Dear (Sir or Madam / Tom),<br><b>开头：</b>I am writing to (extend my heartfelt thanks to / invite you to / make some suggestions about) (事由).<br><b>正文：</b>To begin with, (内容1). What's more, (内容2). I would appreciate it if you could (期望).<br><b>结尾：</b>I am looking forward to your early reply. Yours sincerely, Li Ming"},
+  {t:"⑦ 谚语格言类", ct:"以一句谚语开头作文。结构：点出谚语 → 论证 → 联系自己。",
+   tpl:"<b>开头：</b>There is an old saying that “(谚语)”. It tells us that (含义).<br><b>论证：</b>Take myself as an example. (个人经历). Furthermore, (另一个例证).<br><b>结尾：</b>In conclusion, the saying still holds true today. We should bear it in mind and (行动)."},
+  {t:"⑧ 对比选择类", ct:"两种选择 A/B 让你选。结构：引出 → 两边分析 → 我的选择。",
+   tpl:"<b>开头：</b>When faced with the choice between A and B, different people have different ideas.<br><b>分析：</b>Some prefer A because (理由). Others, however, would rather choose B since (理由).<br><b>结尾：</b>As for me, I prefer (A/B) because (理由). All in all, the right choice depends on our own situation."}
+];
+const essayPhrases = {
+  open: [
+    "Nowadays, ... has become a hot topic.",
+    "With the rapid development of society, ... has drawn wide attention.",
+    "There is no denying that ... plays an important role in our daily life.",
+    "Recently, the issue of ... has been brought into focus."
+  ],
+  body: [
+    "To begin with, ...",
+    "First and foremost, ...",
+    "In addition, ...",
+    "What's more, ...",
+    "For one thing, ... For another, ...",
+    "There is no doubt that ...",
+    "It is widely accepted that ...",
+    "A case in point is ..."
+  ],
+  close: [
+    "In conclusion, ...",
+    "To sum up, ...",
+    "Taking all these factors into consideration, ...",
+    "Only in this way can we ...",
+    "From what has been discussed above, we may safely draw the conclusion that ..."
+  ]
+};
+const essayUpgrade = [
+  ["good", "excellent / remarkable"],
+  ["bad", "harmful / negative"],
+  ["important", "crucial / vital / significant"],
+  ["big", "enormous / considerable"],
+  ["many", "a large number of / plenty of"],
+  ["think", "hold the view that / maintain"],
+  ["about", "concerning / regarding"],
+  ["because", "in that / owing to"],
+  ["more and more", "increasingly"],
+  ["help", "contribute to"],
+  ["very", "extremely / extraordinarily"],
+  ["get", "obtain / acquire"]
+];
+const essaySamples = [
+  {t:"范文1：大学生使用手机", d:"<b>题目：</b>Should college students spend less time on their smartphones?<br><b>范文：</b>In recent years, smartphones have become an indispensable part of college life, which has caused heated debate about whether students use them too much.<br>In my opinion, smartphones are a double-edged sword. On the one hand, they provide easy access to information and make online learning possible. For instance, students can watch English lectures or use learning apps anywhere. On the other hand, spending too much time on phones may lead to poor concentration and lack of sleep.<br>Therefore, we should use smartphones wisely rather than give them up completely. Setting a time limit and focusing on learning goals are practical ways. Only in this way can technology truly serve us."},
+  {t:"范文2：保护环境", d:"<b>题目：</b>Write an essay on the importance of environmental protection.<br><b>范文：</b>With the rapid development of society, environmental problems such as pollution and climate change have drawn wide attention.<br>There is no denying that the environment is closely related to our daily life. Clean air and water are essential to health, while waste and smog are harmful to everyone. Small actions matter, too. We can save water and electricity, sort rubbish and choose public transport. If everyone makes a little effort, the world will become cleaner.<br>In conclusion, protecting the environment is not only the government's duty but also every citizen's responsibility. Let us take action from today and leave a green planet to the next generation."}
+];
+function toggleEssay(i){
+  const b = $('etb' + i);
+  if(b) b.style.display = b.style.display === 'none' ? 'block' : 'none';
+}
+function renderEssay(){
+  $('essayTemplates').innerHTML = essayTemplates.map((tp,i)=>
+    `<div style="border:1px solid var(--gray);border-radius:12px;margin-bottom:8px;overflow:hidden">
+      <div style="padding:12px 14px;font-weight:700;cursor:pointer;background:var(--bg)" onclick="toggleEssay(${i})">📝 ${tp.t} <span style="float:right;color:var(--muted)">▾</span></div>
+      <div id="etb${i}" style="display:none;padding:12px 14px;font-size:14px;line-height:1.9">
+        <p style="color:var(--muted);font-size:13px;margin-bottom:8px">${tp.ct}</p>${tp.tpl}
+      </div>
+    </div>`).join('');
+  $('essayPhrases').innerHTML = ['open','body','close'].map(k=>{
+    const title = {open:'🟢 开头句', body:'🟡 正文过渡句', close:'🔴 结尾句'}[k];
+    return `<div style="margin-bottom:10px"><b style="font-size:14px">${title}</b>` + essayPhrases[k].map(s=>`<p style="margin:6px 0;padding:8px 10px;background:var(--bg);border-radius:8px;font-size:14px">${escHtml(s)}</p>`).join('') + '</div>';
+  }).join('');
+  $('essayUpgrade').innerHTML = essayUpgrade.map(p=>
+    `<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--gray);font-size:14px"><span style="color:var(--danger);text-decoration:line-through">${escHtml(p[0])}</span><span>→</span><b style="color:var(--ok)">${escHtml(p[1])}</b></div>`).join('');
+  $('essaySamples').innerHTML = essaySamples.map((s,i)=>
+    `<div style="border:1px solid var(--gray);border-radius:12px;margin-bottom:10px;overflow:hidden">
+      <div style="padding:10px 14px;font-weight:700;background:var(--bg);cursor:pointer" onclick="toggleEssay(9${i})">📄 ${s.t} <span style="float:right;color:var(--muted)">▾</span></div>
+      <div id="etb9${i}" style="display:none;padding:12px 14px;font-size:14px;line-height:1.9;white-space:normal">${s.d}</div>
+    </div>`).join('');
+}
+
 /* ================= 初始化 ================= */
 window.onload = ()=>{
+  checkin();
+  updateWrongBtn();
+  renderEssay();
   $('apiKey').value = apiKey;
   $('apiUrl').value = apiUrl;
   $('modelName').value = modelName;
